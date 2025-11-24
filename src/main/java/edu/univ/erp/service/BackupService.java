@@ -1,17 +1,11 @@
 package edu.univ.erp.service;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * Windows-safe BackupService with quote-safe paths and password handling.
- * Uses mysqldump.exe and mysql.exe directly through ProcessBuilder.
- */
 public class BackupService {
 
     private final String mysqlBinFolder;
@@ -26,52 +20,64 @@ public class BackupService {
         this.dbName = dbName;
     }
 
-    // -------------------------------
-    // BACKUP
-    // -------------------------------
+    // ---------------------------------------------------------
+    // BACKUP (stdout = SQL, stderr = LOG, never mixed)
+    // ---------------------------------------------------------
     public Result backup(File outFile) {
-
         try {
             String dumpExe = mysqlBinFolder + "\\mysqldump.exe";
 
             List<String> cmd = new ArrayList<>();
-            cmd.add(dumpExe);                     // path to mysqldump
+            cmd.add(dumpExe);
             cmd.add("-u");
             cmd.add(dbUser);
-            cmd.add("--password=" + dbPassword);  // supports @ and special chars
+            cmd.add("--password=" + dbPassword);
             cmd.add("--databases");
             cmd.add(dbName);
 
             ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.redirectOutput(outFile);           // write SQL to file
-            pb.redirectErrorStream(true);         // merge stderr
 
-            Process process = pb.start();
-            String log = read(process.getInputStream());
-            int exitCode = process.waitFor();
+            // Do NOT merge stderr into stdout
+            pb.redirectErrorStream(false);
 
-            if (exitCode == 0) {
-                return new Result(true,
-                        "Backup completed successfully.\nFile: " + outFile.getAbsolutePath());
-            } else {
-                return new Result(false,
-                        "Backup failed with exit code " + exitCode + ".\nLog:\n" + log);
+            Process p = pb.start();
+
+            // Write SQL from stdout into the file
+            try (InputStream stdout = p.getInputStream();
+                 FileOutputStream fos = new FileOutputStream(outFile)) {
+
+                stdout.transferTo(fos);
             }
 
-        } catch (Exception e) {
+            // Capture error messages separately
+            String stderrLog = read(p.getErrorStream());
+
+            int exit = p.waitFor();
+
+            if (exit == 0) {
+                if (!stderrLog.isBlank()) {
+                    return new Result(true,
+                            "Backup successful (with warnings):\n" + stderrLog);
+                }
+                return new Result(true,
+                        "Backup successful!\nSaved to: " + outFile.getAbsolutePath());
+            }
+
             return new Result(false,
-                    "Exception while backing up: " + e.getMessage());
+                    "Backup failed (exit " + exit + "):\n" + stderrLog);
+
+        } catch (Exception ex) {
+            return new Result(false, "Exception: " + ex.getMessage());
         }
     }
 
-    // -------------------------------
-    // RESTORE
-    // -------------------------------
+    // ---------------------------------------------------------
+    // RESTORE (sqlFile → stdin)
+    // ---------------------------------------------------------
     public Result restore(File sqlFile) {
-
         try {
             if (!sqlFile.exists()) {
-                return new Result(false, "Restore file not found:\n" + sqlFile.getAbsolutePath());
+                return new Result(false, "Restore file does not exist:\n" + sqlFile.getAbsolutePath());
             }
 
             String mysqlExe = mysqlBinFolder + "\\mysql.exe";
@@ -84,36 +90,41 @@ public class BackupService {
             cmd.add(dbName);
 
             ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.redirectInput(sqlFile);            // read SQL from file
             pb.redirectErrorStream(true);
 
-            Process process = pb.start();
-            String log = read(process.getInputStream());
-            int exitCode = process.waitFor();
+            Process p = pb.start();
 
-            if (exitCode == 0) {
-                return new Result(true,
-                        "Restore completed successfully.\nRestored from: " + sqlFile.getAbsolutePath());
-            } else {
-                return new Result(false,
-                        "Restore failed with exit code " + exitCode + ".\nLog:\n" + log);
+            // Feed SQL file into mysql stdin
+            try (OutputStream os = p.getOutputStream();
+                 FileInputStream fis = new FileInputStream(sqlFile)) {
+
+                fis.transferTo(os);
             }
 
-        } catch (Exception e) {
+            String log = read(p.getInputStream());
+            int exit = p.waitFor();
+
+            if (exit == 0) {
+                return new Result(true,
+                        "Restore successful from:\n" + sqlFile.getAbsolutePath());
+            }
+
             return new Result(false,
-                    "Exception while restoring: " + e.getMessage());
+                    "Restore failed (exit " + exit + "):\n" + log);
+
+        } catch (Exception ex) {
+            return new Result(false, "Exception: " + ex.getMessage());
         }
     }
 
-    // Read text from process stream
-    private static String read(InputStream in) {
-        try (Scanner sc = new Scanner(in, StandardCharsets.UTF_8)) {
+    // ---------------------------------------------------------
+    private static String read(InputStream is) {
+        try (Scanner sc = new Scanner(is, StandardCharsets.UTF_8)) {
             sc.useDelimiter("\\A");
             return sc.hasNext() ? sc.next() : "";
         }
     }
 
-    // Result container
     public static class Result {
         public final boolean success;
         public final String message;
