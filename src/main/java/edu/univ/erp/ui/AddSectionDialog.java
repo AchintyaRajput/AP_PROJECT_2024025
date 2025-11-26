@@ -12,9 +12,6 @@ import java.sql.ResultSet;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Modern Add/Edit Section dialog with proper Window->Frame conversion.
- */
 public class AddSectionDialog extends JDialog {
 
     private final JComboBox<String> courseBox = new JComboBox<>();
@@ -34,7 +31,6 @@ public class AddSectionDialog extends JDialog {
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
 
-    // FIXED: Accept Window but convert to Frame safely
     public AddSectionDialog(Window parent, SectionService service,
                             SectionService.SectionRow editingSection) {
 
@@ -44,7 +40,7 @@ public class AddSectionDialog extends JDialog {
         this.editingSection = editingSection;
 
         setTitle(editingSection == null ? "Add Section" : "Edit Section");
-        setSize(650, 720);  // Expanded height
+        setSize(650, 720);
         setResizable(false);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
@@ -58,7 +54,9 @@ public class AddSectionDialog extends JDialog {
         if (editingSection != null) loadData();
     }
 
-    // Generate 30-min interval times
+    // =============================
+    // Time interval combos
+    // =============================
     private void populateTimeBoxes() {
         LocalTime s = LocalTime.of(9, 0);
         LocalTime lastStart = LocalTime.of(16, 30);
@@ -75,7 +73,6 @@ public class AddSectionDialog extends JDialog {
         }
     }
 
-    // Load all course IDs + titles
     private void loadCourses() {
         try {
             CourseService cs = new CourseService();
@@ -88,7 +85,6 @@ public class AddSectionDialog extends JDialog {
         }
     }
 
-    // Load instructors from DB
     private void loadInstructors() {
         try (Connection conn = DatabaseConnection.getERPConnection();
              PreparedStatement ps = conn.prepareStatement("SELECT instructor_id, name FROM instructors");
@@ -106,12 +102,14 @@ public class AddSectionDialog extends JDialog {
         }
     }
 
-    // BUILD THE UI
+    // ========================
+    // BUILD UI
+    // ========================
     private void initUI() {
 
         JPanel form = new JPanel(new GridLayout(0, 1, 12, 16));
         form.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
-        form.setBackground(new Color(238, 247, 238)); // light green
+        form.setBackground(new Color(238, 247, 238));
 
         addLabeledField(form, "Course", courseBox);
         addLabeledField(form, "Instructor", instructorBox);
@@ -162,7 +160,6 @@ public class AddSectionDialog extends JDialog {
         b.setPreferredSize(new Dimension(120, 38));
     }
 
-    // Load values when editing
     private void loadData() {
 
         // Select course
@@ -182,7 +179,7 @@ public class AddSectionDialog extends JDialog {
             }
         }
 
-        // Parse day/time
+        // Parse times
         try {
             String[] parts = editingSection.dayTime.split(" ");
             dayBox.setSelectedItem(parts[0]);
@@ -204,28 +201,93 @@ public class AddSectionDialog extends JDialog {
         yearField.setText(String.valueOf(editingSection.year));
     }
 
+    // ========================
+    // VALIDATION + SAVE
+    // ========================
+    private boolean validateFields() {
+
+        if (courseBox.getSelectedItem() == null) {
+            error("Please select a course.");
+            return false;
+        }
+
+        if (instructorBox.getSelectedItem() == null) {
+            error("Please select an instructor.");
+            return false;
+        }
+
+        if (dayBox.getSelectedItem() == null) {
+            error("Please select a day.");
+            return false;
+        }
+
+        if (startTimeBox.getSelectedItem() == null || endTimeBox.getSelectedItem() == null) {
+            error("Start and end times must be selected.");
+            return false;
+        }
+
+        if (roomField.getText().trim().isEmpty()) {
+            error("Room cannot be empty.");
+            return false;
+        }
+
+        // Capacity validation
+        try {
+            int cap = Integer.parseInt(capacityField.getText().trim());
+            if (cap < 0) {
+                error("Capacity cannot be negative.");
+                return false;
+            }
+        } catch (NumberFormatException ex) {
+            error("Capacity must be a valid number.");
+            return false;
+        }
+
+        // Semester
+        if (semesterField.getText().trim().isEmpty()) {
+            error("Semester cannot be empty.");
+            return false;
+        }
+
+        // Year validation
+        try {
+            int year = Integer.parseInt(yearField.getText().trim());
+            if (year < 2000 || year > 2100) {
+                error("Enter a valid year (2000 - 2100).");
+                return false;
+            }
+        } catch (NumberFormatException ex) {
+            error("Year must be a valid number.");
+            return false;
+        }
+
+        // Time logic
+        LocalTime start = LocalTime.parse(startTimeBox.getSelectedItem().toString(), TF);
+        LocalTime end = LocalTime.parse(endTimeBox.getSelectedItem().toString(), TF);
+
+        if (!end.isAfter(start)) {
+            error("End time must be after start time.");
+            return false;
+        }
+
+        return true;
+    }
+
     private void onSave() {
 
+        if (!validateFields()) return;
+
         try {
-            // Extract course id
             String courseId = courseBox.getSelectedItem().toString().split(" - ")[0];
 
             InstructorItem instructor = (InstructorItem) instructorBox.getSelectedItem();
             int instructorId = instructor.id;
 
-            String day = (String) dayBox.getSelectedItem();
-            String start = (String) startTimeBox.getSelectedItem();
-            String end = (String) endTimeBox.getSelectedItem();
+            String day = dayBox.getSelectedItem().toString();
+            String start = startTimeBox.getSelectedItem().toString();
+            String end = endTimeBox.getSelectedItem().toString();
 
-            LocalTime s = LocalTime.parse(start, TF);
-            LocalTime e = LocalTime.parse(end, TF);
-
-            if (!e.isAfter(s)) {
-                JOptionPane.showMessageDialog(this, "End time must be after start time.");
-                return;
-            }
-
-            String dayTime = day + " " + s.format(TF) + "-" + e.format(TF);
+            String dayTime = day + " " + start + "-" + end;
 
             String room = roomField.getText().trim();
             int capacity = Integer.parseInt(capacityField.getText().trim());
@@ -250,11 +312,15 @@ public class AddSectionDialog extends JDialog {
             }
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage());
+            error("Invalid input: " + ex.getMessage());
         }
     }
 
-    // Helper class for dropdown
+    private void error(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Input Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    // Helper class
     private static class InstructorItem {
         int id;
         String name;
