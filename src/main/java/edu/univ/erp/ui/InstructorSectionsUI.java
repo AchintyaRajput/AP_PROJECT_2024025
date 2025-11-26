@@ -8,7 +8,11 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class InstructorSectionsUI extends JFrame {
+/**
+ * Converted from JFrame → JPanel for embedding inside InstructorDashboard.
+ * All functionality preserved.
+ */
+public class InstructorSectionsUI extends JPanel {
 
     private final User currentInstructor;
     private final InstructorService instructorService = new InstructorService();
@@ -19,23 +23,21 @@ public class InstructorSectionsUI extends JFrame {
     public InstructorSectionsUI(User instructor) {
         this.currentInstructor = instructor;
 
-        setTitle("My Sections - " + instructor.getUsername());
-        setSize(900, 500);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
 
         initUI();
         loadSections();
-        setVisible(true);
     }
 
     private void initUI() {
-        setLayout(new BorderLayout());
 
         JLabel title = new JLabel("My Assigned Sections", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        title.setFont(new Font("SansSerif", Font.BOLD, 22));
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         add(title, BorderLayout.NORTH);
 
+        // ===== TABLE MODEL =====
         model = new DefaultTableModel(new Object[]{
                 "Section ID", "Course ID", "Course Title",
                 "Day/Time", "Room", "Semester", "Year"
@@ -48,9 +50,14 @@ public class InstructorSectionsUI extends JFrame {
 
         table = new JTable(model);
         table.setRowHeight(25);
-        add(new JScrollPane(table), BorderLayout.CENTER);
 
+        JScrollPane scroller = new JScrollPane(table);
+        scroller.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        add(scroller, BorderLayout.CENTER);
+
+        // ===== BOTTOM BUTTONS =====
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(Color.WHITE);
 
         JButton btnViewStudents = new JButton("View Students");
         JButton btnStats = new JButton("Class Stats");
@@ -59,14 +66,16 @@ public class InstructorSectionsUI extends JFrame {
         bottom.add(btnViewStudents);
         bottom.add(btnStats);
         bottom.add(btnRefresh);
+
         add(bottom, BorderLayout.SOUTH);
 
+        // ===== ACTIONS =====
         btnViewStudents.addActionListener(e -> viewStudents());
         btnStats.addActionListener(e -> showStats());
         btnRefresh.addActionListener(e -> loadSections());
     }
 
-    private void loadSections() {
+    public void loadSections() {
         model.setRowCount(0);
 
         List<InstructorService.SectionRow> list =
@@ -90,7 +99,7 @@ public class InstructorSectionsUI extends JFrame {
 
         if (row == -1) {
             JOptionPane.showMessageDialog(
-                    this,
+                    SwingUtilities.getWindowAncestor(this),
                     "Please select a section first.",
                     "No Selection",
                     JOptionPane.WARNING_MESSAGE
@@ -100,13 +109,12 @@ public class InstructorSectionsUI extends JFrame {
 
         int sectionId = (int) model.getValueAt(row, 0);
 
-        new InstructorSectionStudentsUI(currentInstructor, sectionId).setVisible(true);
+        new InstructorSectionStudentsUI(currentInstructor, sectionId)
+                .setVisible(true);
     }
 
-    // ===============================
-    // CLASS STATS POPUP
-    // ===============================
     private void showStats() {
+
         int row = table.getSelectedRow();
 
         if (row == -1) {
@@ -134,15 +142,23 @@ public class InstructorSectionsUI extends JFrame {
             return;
         }
 
-        String message = ""
-                + "Class Average: " + String.format("%.2f", stats.average) + "\n"
-                + "Median: " + String.format("%.2f", stats.median) + "\n"
-                + "Pass Count: " + stats.passCount + "\n"
-                + "Fail Count: " + stats.failCount;
+        String msg = """
+            Class Statistics:
+            
+            Average Final Grade: %.2f
+            Median Final Grade: %.2f
+            Pass Count: %d
+            Fail Count: %d
+            """.formatted(
+                stats.average,
+                stats.median,
+                stats.passCount,
+                stats.failCount
+        );
 
         JOptionPane.showMessageDialog(
                 this,
-                message,
+                msg,
                 "Class Statistics",
                 JOptionPane.INFORMATION_MESSAGE
         );

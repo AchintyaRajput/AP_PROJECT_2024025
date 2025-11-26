@@ -9,12 +9,16 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Fully working Grade Entry UI
- * - Add grade
- * - Update grade
- * - Load grade on row-double-click
- * - Calculate final grade
- * - Maintenance mode blocking
+ * GradeEntryUI — updated to support Max Marks and correct ordering.
+ *
+ * Columns:
+ *  Grade ID | Component | Score | Max Marks | Weight (%) | Weighted Score
+ *
+ * Form fields:
+ *  Component | Score | Max Marks | Weight (%)
+ *
+ * Save/Update calls instructorService.saveGrade(enrollmentId, component, score, weight, maxMarks)
+ * Recalculate uses instructorService.calculateFinalGrade(enrollmentId)
  */
 public class GradeEntryUI extends JFrame {
 
@@ -26,9 +30,10 @@ public class GradeEntryUI extends JFrame {
     private JTable table;
     private DefaultTableModel model;
 
-    // Input fields
+    // Input fields (order: component, score, maxMarks, weight)
     private JTextField txtComponent;
     private JTextField txtScore;
+    private JTextField txtMaxMarks;
     private JTextField txtWeight;
 
     public GradeEntryUI(int enrollmentId, String studentName) {
@@ -72,7 +77,7 @@ public class GradeEntryUI extends JFrame {
 
         // ===== TABLE =====
         model = new DefaultTableModel(new Object[]{
-                "Grade ID", "Component", "Score", "Weight (%)"
+                "Grade ID", "Component", "Score", "Max Marks", "Weight (%)", "Weighted Score"
         }, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -87,8 +92,7 @@ public class GradeEntryUI extends JFrame {
         // double-click to load row into form
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (evt.getClickCount() == 2)
-                    loadSelectedIntoForm();
+                if (evt.getClickCount() == 2) loadSelectedIntoForm();
             }
         });
 
@@ -97,30 +101,42 @@ public class GradeEntryUI extends JFrame {
         bottomWrapper.setLayout(new BorderLayout());
 
         // ===== INPUT FORM =====
-        JPanel form = new JPanel(new GridLayout(1, 6, 10, 10));
+        JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 8, 6, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         txtComponent = new JTextField();
         txtScore = new JTextField();
+        txtMaxMarks = new JTextField();
         txtWeight = new JTextField();
 
-        form.add(new JLabel("Component:"));
-        form.add(txtComponent);
-        form.add(new JLabel("Score:"));
-        form.add(txtScore);
-        form.add(new JLabel("Weight:"));
-        form.add(txtWeight);
+        int col = 0;
+
+        gbc.gridx = col; gbc.gridy = 0; form.add(new JLabel("Component:"), gbc);
+        gbc.gridx = col + 1; gbc.weightx = 0.3; form.add(txtComponent, gbc);
+
+        gbc.gridx = col + 2; gbc.weightx = 0; form.add(new JLabel("Score:"), gbc);
+        gbc.gridx = col + 3; gbc.weightx = 0.15; form.add(txtScore, gbc);
+
+        gbc.gridx = col + 4; gbc.weightx = 0; form.add(new JLabel("Max Marks:"), gbc);
+        gbc.gridx = col + 5; gbc.weightx = 0.15; form.add(txtMaxMarks, gbc);
+
+        // second row for weight label (span across)
+        gbc.gridx = col; gbc.gridy = 1; gbc.weightx = 0; form.add(new JLabel("Weight (%):"), gbc);
+        gbc.gridx = col + 1; gbc.gridwidth = 1; gbc.weightx = 0.15; form.add(txtWeight, gbc);
 
         bottomWrapper.add(form, BorderLayout.CENTER);
 
         // ===== BUTTON PANEL =====
         JPanel bottomButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton btnCalc = new JButton("Calculate Final Grade");
+        JButton btnRecalc = new JButton("Recalculate Final Grade");
         JButton btnSave = new JButton("Save / Update");
         JButton btnRefresh = new JButton("Refresh");
 
-        bottomButtons.add(btnCalc);
+        bottomButtons.add(btnRecalc);
         bottomButtons.add(btnSave);
         bottomButtons.add(btnRefresh);
 
@@ -129,7 +145,7 @@ public class GradeEntryUI extends JFrame {
         add(bottomWrapper, BorderLayout.SOUTH);
 
         // ACTIONS
-        btnCalc.addActionListener(e -> calculateFinalGrade());
+        btnRecalc.addActionListener(e -> recalculateFinalGrade());
         btnSave.addActionListener(e -> saveGrade());
         btnRefresh.addActionListener(e -> loadGrades());
     }
@@ -141,11 +157,17 @@ public class GradeEntryUI extends JFrame {
                 instructorService.getGradesForEnrollment(enrollmentId);
 
         for (InstructorService.GradeRow g : list) {
+            double weighted = 0.0;
+            if (g.maxMarks > 0) {
+                weighted = (g.score / g.maxMarks) * g.weight;
+            }
             model.addRow(new Object[]{
                     g.gradeId,
                     g.component,
                     g.score,
-                    g.weight
+                    g.maxMarks,
+                    g.weight,
+                    String.format("%.2f", weighted)
             });
         }
     }
@@ -154,9 +176,11 @@ public class GradeEntryUI extends JFrame {
         int row = table.getSelectedRow();
         if (row == -1) return;
 
+        // Table columns: 0:id,1:component,2:score,3:maxMarks,4:weight,5:weighted
         txtComponent.setText(model.getValueAt(row, 1).toString());
         txtScore.setText(model.getValueAt(row, 2).toString());
-        txtWeight.setText(model.getValueAt(row, 3).toString());
+        txtMaxMarks.setText(model.getValueAt(row, 3).toString());
+        txtWeight.setText(model.getValueAt(row, 4).toString());
     }
 
     private void saveGrade() {
@@ -172,6 +196,7 @@ public class GradeEntryUI extends JFrame {
         try {
             String component = txtComponent.getText().trim();
             double score = Double.parseDouble(txtScore.getText().trim());
+            double maxMarks = Double.parseDouble(txtMaxMarks.getText().trim());
             double weight = Double.parseDouble(txtWeight.getText().trim());
 
             if (component.isEmpty()) {
@@ -182,9 +207,8 @@ public class GradeEntryUI extends JFrame {
                 return;
             }
 
-            boolean ok = instructorService.saveGrade(
-                    enrollmentId, component, score, weight
-            );
+            // Note: InstructorService.saveGrade(enrollmentId, component, score, weight, maxMarks)
+            boolean ok = instructorService.saveGrade(enrollmentId, component, score, weight, maxMarks);
 
             if (ok) {
                 JOptionPane.showMessageDialog(this,
@@ -201,54 +225,24 @@ public class GradeEntryUI extends JFrame {
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this,
-                    "Score and weight must be numbers.",
+                    "Score, Max Marks and Weight must be numbers.",
                     "Input Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void calculateFinalGrade() {
-        try (var conn = DatabaseConnection.getERPConnection()) {
-
-            String sql = """
-                SELECT score, weight
-                FROM grades
-                WHERE enrollment_id = ?
-            """;
-
-            var ps = conn.prepareStatement(sql);
-            ps.setInt(1, enrollmentId);
-            var rs = ps.executeQuery();
-
-            double total = 0;
-
-            while (rs.next()) {
-                double score = rs.getDouble("score");
-                double weight = rs.getDouble("weight");
-                total += score * (weight / 100.0);
-            }
-
-            // update enrollment final_grade
-            String up = """
-                UPDATE enrollments
-                SET final_grade = ?
-                WHERE enrollment_id = ?
-            """;
-
-            var ps2 = conn.prepareStatement(up);
-            ps2.setDouble(1, total);
-            ps2.setInt(2, enrollmentId);
-            ps2.executeUpdate();
-
+    private void recalculateFinalGrade() {
+        // Calls InstructorService.calculateFinalGrade(enrollmentId)
+        boolean ok = instructorService.calculateFinalGrade(enrollmentId);
+        if (ok) {
             JOptionPane.showMessageDialog(this,
-                    "Final Grade Calculated: " + total,
+                    "Final grade recalculated and saved.",
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            loadGrades();
+        } else {
             JOptionPane.showMessageDialog(this,
-                    "Error calculating final grade.",
+                    "Failed to calculate final grade.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }

@@ -2,11 +2,14 @@ package edu.univ.erp.ui;
 
 import edu.univ.erp.auth.LoginService;
 import edu.univ.erp.domain.User;
+import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 
-public class ChangePasswordUI extends JFrame {
+public class ChangePasswordUI extends JDialog {
 
     private final User currentUser;
 
@@ -16,62 +19,114 @@ public class ChangePasswordUI extends JFrame {
     private final JLabel messageLabel = new JLabel("", SwingConstants.CENTER);
 
     public ChangePasswordUI(User user) {
+
+        super((Frame) null, "Change Password", true);
         this.currentUser = user;
 
-        setTitle("Change Password");
-        setSize(420, 360);
+        // -----------------------------
+        // THEME SETUP
+        // -----------------------------
+        FlatLightLaf.setup();
+        UIManager.put("Button.arc", 12);
+        UIManager.put("Component.arc", 12);
+        UIManager.put("TextComponent.arc", 10);
+
+        setSize(650, 470);
+        setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setResizable(false);
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.WHITE);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);
+        root.setBorder(new EmptyBorder(20, 25, 20, 25));
+        add(root);
 
-        JLabel title = new JLabel("Change Password", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 22));
-        title.setForeground(new Color(60, 60, 60));
+        // -----------------------------
+        // TITLE
+        // -----------------------------
+        JLabel title = new JLabel("Change Password");
+        title.setFont(new Font("Inter", Font.BOLD, 24));
+        title.setForeground(new Color(40, 40, 40));
+        title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setBorder(new EmptyBorder(0, 0, 10, 0));
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        panel.add(title, gbc);
+        root.add(title, BorderLayout.NORTH);
 
-        gbc.gridwidth = 1;
+        // -----------------------------
+        // MAIN FORM PANEL (soft green box)
+        // -----------------------------
+        JPanel card = new JPanel();
+        card.setBackground(new Color(238, 247, 233)); // very light green
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(new EmptyBorder(20, 22, 20, 22));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        gbc.gridy++;
-        panel.add(new JLabel("Old Password:"), gbc);
-        gbc.gridx = 1;
-        panel.add(oldPassField, gbc);
+        root.add(card, BorderLayout.CENTER);
 
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("New Password:"), gbc);
-        gbc.gridx = 1;
-        panel.add(newPassField, gbc);
+        // -------- Field Builder Helper --------
+        addField(card, "Old Password", oldPassField);
+        addField(card, "New Password", newPassField);
+        addField(card, "Confirm Password", confirmPassField);
 
-        gbc.gridx = 0; gbc.gridy++;
-        panel.add(new JLabel("Confirm Password:"), gbc);
-        gbc.gridx = 1;
-        panel.add(confirmPassField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-        gbc.gridwidth = 2;
+        // Message Label
+        messageLabel.setFont(new Font("Inter", Font.PLAIN, 14));
         messageLabel.setForeground(Color.RED);
-        panel.add(messageLabel, gbc);
+        messageLabel.setBorder(new EmptyBorder(8, 0, 8, 0));
+        card.add(messageLabel);
 
-        JButton btnChange = new JButton("Update Password");
-        btnChange.setBackground(new Color(120, 50, 220));
-        btnChange.setForeground(Color.WHITE);
-        btnChange.setFont(new Font("SansSerif", Font.BOLD, 14));
-        btnChange.addActionListener(e -> changePassword());
+        // -----------------------------
+        // BUTTONS PANEL
+        // -----------------------------
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 5));
+        btnPanel.setBackground(new Color(238, 247, 233));
 
-        gbc.gridy++;
-        panel.add(btnChange, gbc);
+        JButton btnCancel = new JButton("Cancel");
+        btnCancel.setPreferredSize(new Dimension(120, 38));
+        btnCancel.setFont(new Font("Inter", Font.BOLD, 14));
+        btnCancel.setBackground(Color.WHITE);
+        btnCancel.setForeground(Color.BLACK);
+        btnCancel.setBorder(new LineBorder(new Color(180, 180, 180)));
+        btnCancel.addActionListener(e -> dispose());
 
-        add(panel);
+        JButton btnUpdate = new JButton("Update Password");
+        btnUpdate.setPreferredSize(new Dimension(160, 38));
+        btnUpdate.setFont(new Font("Inter", Font.BOLD, 14));
+        btnUpdate.setBackground(new Color(139, 195, 74));  // soft green
+        btnUpdate.setForeground(Color.BLACK);
+        btnUpdate.setFocusPainted(false);
+        btnUpdate.addActionListener(e -> changePassword());
+
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnUpdate);
+
+        card.add(btnPanel);
     }
 
+    // Helper to add fields with label + spacing
+    private void addField(JPanel container, String label, JPasswordField field) {
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Inter", Font.PLAIN, 15));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        field.setPreferredSize(new Dimension(320, 38));
+        field.setMaximumSize(new Dimension(320, 38));
+        field.setFont(new Font("Inter", Font.PLAIN, 15));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(170, 170, 170)),
+                new EmptyBorder(7, 10, 7, 10)
+        ));
+
+        container.add(lbl);
+        container.add(field);
+        container.add(Box.createVerticalStrut(12));
+    }
+
+    // -------------------------------------
+    // LOGIC
+    // -------------------------------------
     private void changePassword() {
+
         String oldPass = new String(oldPassField.getPassword());
         String newPass = new String(newPassField.getPassword());
         String confirm = new String(confirmPassField.getPassword());
@@ -90,13 +145,11 @@ public class ChangePasswordUI extends JFrame {
 
         LoginService service = new LoginService();
 
-        // Verify old password
         if (!service.verifyPassword(currentUser.getUserId(), oldPass)) {
             messageLabel.setText("Old password is incorrect.");
             return;
         }
 
-        // Update password
         boolean updated = service.updatePassword(currentUser.getUserId(), newPass);
 
         if (updated) {

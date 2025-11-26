@@ -10,11 +10,10 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Shows all available sections and allows the student to enroll.
- * Displays ONLY available capacity.
- * Enrollment is disabled during Maintenance Mode.
+ * Converted from JFrame → JPanel for use inside StudentMainFrame (CardLayout).
+ * All logic preserved exactly as before.
  */
-public class StudentAvailableSectionsUI extends JFrame {
+public class StudentAvailableSectionsUI extends JPanel {
 
     private final User currentStudent;
     private final StudentService studentService = new StudentService();
@@ -25,24 +24,22 @@ public class StudentAvailableSectionsUI extends JFrame {
     public StudentAvailableSectionsUI(User student) {
         this.currentStudent = student;
 
-        setTitle("Available Sections - " + student.getUsername());
-        setSize(900, 500);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
 
         initUI();
         loadSections();
-        setVisible(true);
     }
 
     private void initUI() {
-        setLayout(new BorderLayout());
 
         // ===== HEADER PANEL =====
         JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(Color.WHITE);
 
         JLabel title = new JLabel("Available Sections", SwingConstants.CENTER);
         title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         top.add(title, BorderLayout.NORTH);
 
         // ===== MAINTENANCE BANNER =====
@@ -55,6 +52,7 @@ public class StudentAvailableSectionsUI extends JFrame {
             banner.setBackground(new Color(255, 204, 0));
             banner.setForeground(Color.BLACK);
             banner.setFont(new Font("SansSerif", Font.BOLD, 14));
+            banner.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
             top.add(banner, BorderLayout.SOUTH);
         }
@@ -76,10 +74,13 @@ public class StudentAvailableSectionsUI extends JFrame {
         table = new JTable(model);
         table.setRowHeight(25);
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane scroller = new JScrollPane(table);
+        scroller.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        add(scroller, BorderLayout.CENTER);
 
         // ===== BUTTON PANEL =====
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(Color.WHITE);
 
         JButton btnEnroll = new JButton("Enroll Selected");
         JButton btnRefresh = new JButton("Refresh");
@@ -107,7 +108,7 @@ public class StudentAvailableSectionsUI extends JFrame {
                     s.instructorName,
                     s.dayTime,
                     s.room,
-                    s.availableCapacity, // ONLY AVAILABLE SEATS
+                    s.availableCapacity,
                     s.semester,
                     s.year
             });
@@ -118,20 +119,24 @@ public class StudentAvailableSectionsUI extends JFrame {
 
         // ===== BLOCK DURING MAINTENANCE =====
         if (DatabaseConnection.isMaintenanceOn()) {
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(
+                    SwingUtilities.getWindowAncestor(this),
                     "Maintenance Mode is active.\nEnrollment is temporarily disabled.",
                     "Action Blocked",
-                    JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.WARNING_MESSAGE
+            );
             return;
         }
 
         int row = table.getSelectedRow();
 
         if (row == -1) {
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(
+                    SwingUtilities.getWindowAncestor(this),
                     "Please select a section to enroll.",
                     "No Selection",
-                    JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.WARNING_MESSAGE
+            );
             return;
         }
 
@@ -141,16 +146,20 @@ public class StudentAvailableSectionsUI extends JFrame {
         String result = studentService.registerForSection(currentStudent.getId(), sectionId);
 
         if (result.equals("SUCCESS")) {
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(
+                    SwingUtilities.getWindowAncestor(this),
                     "Enrolled successfully!",
                     "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.INFORMATION_MESSAGE
+            );
             loadSections();
         } else {
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(
+                    SwingUtilities.getWindowAncestor(this),
                     result,
                     "Enrollment Failed",
-                    JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 }

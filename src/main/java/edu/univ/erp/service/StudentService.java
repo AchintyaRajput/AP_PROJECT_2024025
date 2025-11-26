@@ -37,6 +37,7 @@ public class StudentService {
         public String courseTitle;
         public String component;
         public double score;
+        public double maxMarks;   // NEW FIELD
         public double weight;
     }
 
@@ -51,9 +52,31 @@ public class StudentService {
 
     private final NotificationService notificationService = new NotificationService();
 
-    // ===============================
+    // ==========================================================
+    // GET REAL STUDENT NAME FROM ERP DB
+    // ==========================================================
+    public String getStudentName(int studentId) {
+        String sql = "SELECT name FROM students WHERE student_id = ?";
+
+        try (Connection conn = DatabaseConnection.getERPConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, studentId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) return rs.getString("name");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+    // ==========================================================
     // 1️⃣ GET ALL AVAILABLE SECTIONS
-    // ===============================
+    // ==========================================================
     public List<SectionRow> getAvailableSections() {
         List<SectionRow> list = new ArrayList<>();
 
@@ -95,9 +118,9 @@ public class StudentService {
     }
 
 
-    // ==========================================
-    // 2️⃣ GET STUDENT'S REGISTERED ENROLLMENTS
-    // ==========================================
+    // ==========================================================
+    // 2️⃣ GET STUDENT ENROLLMENTS
+    // ==========================================================
     public List<EnrollmentRow> getStudentEnrollments(int studentId) {
         List<EnrollmentRow> list = new ArrayList<>();
 
@@ -142,27 +165,23 @@ public class StudentService {
     }
 
 
-    // ==================================
+    // ==========================================================
     // 3️⃣ REGISTER FOR A SECTION
-    // ==================================
+    // ==========================================================
     public String registerForSection(int studentId, int sectionId) {
 
         try (Connection conn = DatabaseConnection.getERPConnection()) {
 
-            // A) Get course, instructor, available capacity
+            // Fetch section info
             String sql = """
-                SELECT s.course_id, s.available_capacity, s.instructor_id,
-                       c.title,
-                       st.name AS student_name
+                SELECT s.course_id, s.available_capacity, s.instructor_id, c.title
                 FROM sections s
                 JOIN courses c ON s.course_id = c.course_id
-                JOIN students st ON st.student_id = ?
                 WHERE s.section_id = ?
                 """;
 
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, studentId);
-            ps.setInt(2, sectionId);
+            ps.setInt(1, sectionId);
             ResultSet rs = ps.executeQuery();
 
             if (!rs.next()) return "Section does not exist.";
@@ -171,12 +190,18 @@ public class StudentService {
             int available = rs.getInt("available_capacity");
             int instructorId = rs.getInt("instructor_id");
             String courseTitle = rs.getString("title");
-            String studentName = rs.getString("student_name");
 
-            // B) Check capacity
-            if (available <= 0) return "No seats available in this section.";
+            // Fetch student name
+            String studentName = "";
+            PreparedStatement ps2 = conn.prepareStatement("SELECT name FROM students WHERE student_id = ?");
+            ps2.setInt(1, studentId);
+            ResultSet rsStu = ps2.executeQuery();
+            if (rsStu.next()) studentName = rsStu.getString("name");
 
-            // C) Prevent duplicate course enrollment
+            // No capacity
+            if (available <= 0) return "No seats available.";
+
+            // Prevent duplicate course enrollment
             String sqlDup = """
                 SELECT COUNT(*)
                 FROM enrollments e
@@ -193,35 +218,29 @@ public class StudentService {
             if (rsDup.getInt(1) > 0)
                 return "You are already enrolled in another section of this course.";
 
-            // D) Insert enrollment
-            String insert = "INSERT INTO enrollments (student_id, section_id, status) VALUES (?, ?, 'Active')";
-            PreparedStatement pi = conn.prepareStatement(insert);
-            pi.setInt(1, studentId);
-            pi.setInt(2, sectionId);
-            pi.executeUpdate();
+            // Insert enrollment
+            PreparedStatement insert = conn.prepareStatement(
+                    "INSERT INTO enrollments (student_id, section_id, status) VALUES (?, ?, 'Active')");
+            insert.setInt(1, studentId);
+            insert.setInt(2, sectionId);
+            insert.executeUpdate();
 
-            // E) Reduce available capacity
-            String updateCap = "UPDATE sections SET available_capacity = available_capacity - 1 WHERE section_id = ?";
-            PreparedStatement pu = conn.prepareStatement(updateCap);
-            pu.setInt(1, sectionId);
-            pu.executeUpdate();
+            // Reduce capacity
+            PreparedStatement upd = conn.prepareStatement(
+                    "UPDATE sections SET available_capacity = available_capacity - 1 WHERE section_id = ?");
+            upd.setInt(1, sectionId);
+            upd.executeUpdate();
 
-            // ==============================
-            // 🔔 NOTIFICATIONS
-            // ==============================
-            // 1. Notify student
+            // Notifications
             notificationService.createNotification(
-                    studentId,
-                    null,
+                    studentId, null,
                     "You enrolled in " + courseId + " - " + courseTitle + " (Section " + sectionId + ")",
                     "section:" + sectionId
             );
 
-            // 2. Notify instructor (if section has instructor)
             if (instructorId > 0) {
                 notificationService.createNotification(
-                        instructorId,
-                        null,
+                        instructorId, null,
                         "Student " + studentName + " enrolled in your section " + courseId + " (ID " + sectionId + ")",
                         "section:" + sectionId
                 );
@@ -236,15 +255,15 @@ public class StudentService {
     }
 
 
-    // ==========================
-    // 4️⃣ DROP A COURSE / SECTION
-    // ==========================
+    // ==========================================================
+    // 4️⃣ DROP COURSE
+    // ==========================================================
     public boolean dropCourse(int studentId, int sectionId) {
 
         try (Connection conn = DatabaseConnection.getERPConnection()) {
 
-            // A) Get course and instructor for notification
-            String sqlInfo = """
+            // Get info for notification
+            String sql = """
                 SELECT s.course_id, c.title, s.instructor_id, st.name AS student_name
                 FROM sections s
                 JOIN courses c ON s.course_id = c.course_id
@@ -252,53 +271,47 @@ public class StudentService {
                 WHERE s.section_id = ?
                 """;
 
-            PreparedStatement info = conn.prepareStatement(sqlInfo);
-            info.setInt(1, studentId);
-            info.setInt(2, sectionId);
-            ResultSet infoRs = info.executeQuery();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, studentId);
+            ps.setInt(2, sectionId);
+            ResultSet rs = ps.executeQuery();
 
             String courseId = null, courseTitle = null, studentName = null;
             int instructorId = 0;
 
-            if (infoRs.next()) {
-                courseId = infoRs.getString("course_id");
-                courseTitle = infoRs.getString("title");
-                instructorId = infoRs.getInt("instructor_id");
-                studentName = infoRs.getString("student_name");
+            if (rs.next()) {
+                courseId = rs.getString("course_id");
+                courseTitle = rs.getString("title");
+                instructorId = rs.getInt("instructor_id");
+                studentName = rs.getString("student_name");
             }
 
-            // B) Delete enrollment
-            String sql = "DELETE FROM enrollments WHERE student_id = ? AND section_id = ?";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, studentId);
-            ps.setInt(2, sectionId);
+            // Delete enrollment
+            PreparedStatement del = conn.prepareStatement(
+                    "DELETE FROM enrollments WHERE student_id = ? AND section_id = ?");
+            del.setInt(1, studentId);
+            del.setInt(2, sectionId);
 
-            boolean removed = ps.executeUpdate() > 0;
+            boolean removed = del.executeUpdate() > 0;
             if (!removed) return false;
 
-            // C) Increase seats
-            String update = "UPDATE sections SET available_capacity = available_capacity + 1 WHERE section_id = ?";
-            PreparedStatement pu = conn.prepareStatement(update);
-            pu.setInt(1, sectionId);
-            pu.executeUpdate();
+            // Increase capacity
+            PreparedStatement upd = conn.prepareStatement(
+                    "UPDATE sections SET available_capacity = available_capacity + 1 WHERE section_id = ?");
+            upd.setInt(1, sectionId);
+            upd.executeUpdate();
 
-            // ==============================
-            // 🔔 NOTIFICATIONS
-            // ==============================
-            // 1. Notify student
+            // Notifications
             notificationService.createNotification(
-                    studentId,
-                    null,
+                    studentId, null,
                     "You dropped " + courseId + " - " + courseTitle + " (Section " + sectionId + ")",
                     "section:" + sectionId
             );
 
-            // 2. Notify instructor
             if (instructorId > 0) {
                 notificationService.createNotification(
-                        instructorId,
-                        null,
-                        "Student " + studentName + " dropped your section " + courseId + " (ID " + sectionId + ")",
+                        instructorId, null,
+                        "Student " + studentName + " dropped your section " + courseId,
                         "section:" + sectionId
                 );
             }
@@ -312,15 +325,15 @@ public class StudentService {
     }
 
 
-    // ======================
-    // 5️⃣ GET STUDENT GRADES
-    // ======================
+    // ==========================================================
+    // 5️⃣ GET STUDENT GRADES (NOW RETURNS maxMarks)
+    // ==========================================================
     public List<GradeRow> getGrades(int studentId) {
         List<GradeRow> list = new ArrayList<>();
 
         String sql = """
                 SELECT c.course_id, c.title,
-                       g.component, g.score, g.weight
+                       g.component, g.score, g.max_marks, g.weight
                 FROM enrollments e
                 JOIN sections s ON e.section_id = s.section_id
                 JOIN courses c ON s.course_id = c.course_id
@@ -340,7 +353,9 @@ public class StudentService {
                 r.courseTitle = rs.getString("title");
                 r.component = rs.getString("component");
                 r.score = rs.getDouble("score");
+                r.maxMarks = rs.getDouble("max_marks");  // NEW
                 r.weight = rs.getDouble("weight");
+
                 list.add(r);
             }
 
@@ -352,9 +367,9 @@ public class StudentService {
     }
 
 
-    // ============================================
-    // 6️⃣ GET TRANSCRIPT DATA FOR CSV EXPORT
-    // ============================================
+    // ==========================================================
+    // 6️⃣ GET TRANSCRIPT DATA
+    // ==========================================================
     public List<TranscriptRow> getTranscriptRows(int studentId) {
 
         List<TranscriptRow> list = new ArrayList<>();
@@ -362,8 +377,7 @@ public class StudentService {
         String sql = """
                 SELECT c.course_id, c.title,
                        s.semester, s.year,
-                       e.final_grade,
-                       e.status
+                       e.final_grade, e.status
                 FROM enrollments e
                 JOIN sections s ON e.section_id = s.section_id
                 JOIN courses c ON s.course_id = c.course_id

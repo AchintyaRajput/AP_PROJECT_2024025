@@ -9,9 +9,12 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Shows all grades for the logged-in student.
+ * Updated StudentGradesUI:
+ * - Displays Score / Max Marks
+ * - Displays Weighted Score using (score/maxMarks)*weight
+ * - Matches new grading system
  */
-public class StudentGradesUI extends JFrame {
+public class StudentGradesUI extends JPanel {
 
     private final User currentStudent;
     private final StudentService studentService = new StudentService();
@@ -22,44 +25,53 @@ public class StudentGradesUI extends JFrame {
     public StudentGradesUI(User student) {
         this.currentStudent = student;
 
-        setTitle("My Grades - " + student.getUsername());
-        setSize(850, 450);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
 
         initUI();
         loadGrades();
-
-        setVisible(true);
     }
 
     private void initUI() {
-        setLayout(new BorderLayout());
 
         JLabel title = new JLabel("My Grades", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        title.setFont(new Font("SansSerif", Font.BOLD, 22));
+        title.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+
         add(title, BorderLayout.NORTH);
 
+        // ===== TABLE MODEL =====
         model = new DefaultTableModel(new Object[]{
-                "Course ID", "Course Title",
-                "Component", "Score", "Weight", "Weighted Score"
+                "Course ID",
+                "Course Title",
+                "Component",
+                "Score",
+                "Max Marks",
+                "Weight (%)",
+                "Weighted Score"
         }, 0) {
-
             @Override
             public boolean isCellEditable(int row, int col) {
-                return false; // read-only table
+                return false;
             }
         };
 
         table = new JTable(model);
-        table.setRowHeight(25);
+        table.setRowHeight(28);
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Bottom refresh button
+        add(scroll, BorderLayout.CENTER);
+
+        // ===== REFRESH BUTTON =====
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(Color.WHITE);
+
         JButton btnRefresh = new JButton("Refresh");
+        btnRefresh.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnRefresh.addActionListener(e -> loadGrades());
+
         bottom.add(btnRefresh);
 
         add(bottom, BorderLayout.SOUTH);
@@ -72,14 +84,18 @@ public class StudentGradesUI extends JFrame {
                 studentService.getGrades(currentStudent.getId());
 
         for (StudentService.GradeRow g : list) {
-            double weighted = g.score * (g.weight / 100.0);
+
+            double weighted = 0;
+            if (g.maxMarks > 0)
+                weighted = (g.score / g.maxMarks) * g.weight;
 
             model.addRow(new Object[]{
                     g.courseId,
                     g.courseTitle,
                     g.component,
                     g.score,
-                    g.weight + " %",
+                    g.maxMarks,
+                    g.weight,
                     String.format("%.2f", weighted)
             });
         }

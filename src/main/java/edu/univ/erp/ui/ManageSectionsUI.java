@@ -8,37 +8,45 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * UI for managing sections (Admin).
+ * ManageSectionsUI as JPanel inside AdminDashboard.
+ * Uses parent Frame via SwingUtilities.getWindowAncestor(this) for dialogs.
  */
-public class ManageSectionsUI extends JFrame {
+public class ManageSectionsUI extends JPanel {
 
     private final SectionService sectionService = new SectionService();
     private SectionTableModel tableModel;
     private JTable table;
+
     private final User currentAdmin;
 
     public ManageSectionsUI(User admin) {
         this.currentAdmin = admin;
 
-        setTitle("Manage Sections");
-        setSize(900, 500);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
+        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
         initUI();
         loadSections();
     }
 
     private void initUI() {
-        setLayout(new BorderLayout());
 
-        // ===== TOP BUTTON PANEL =====
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // ======================================
+        // TOP BUTTON BAR
+        // ======================================
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        top.setBackground(Color.WHITE);
 
         JButton btnAdd = new JButton("Add Section");
         JButton btnEdit = new JButton("Edit Section");
         JButton btnDelete = new JButton("Delete Section");
         JButton btnRefresh = new JButton("Refresh");
+
+        styleButton(btnAdd);
+        styleButton(btnEdit);
+        styleButton(btnDelete);
+        styleButton(btnRefresh);
 
         top.add(btnAdd);
         top.add(btnEdit);
@@ -47,45 +55,70 @@ public class ManageSectionsUI extends JFrame {
 
         add(top, BorderLayout.NORTH);
 
-        // ===== TABLE =====
+        // ======================================
+        // TABLE
+        // ======================================
         tableModel = new SectionTableModel(null);
         table = new JTable(tableModel);
         table.setRowHeight(24);
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(210, 210, 210)));
 
-        // ===== BUTTON ACTIONS =====
+        add(scroll, BorderLayout.CENTER);
 
-        // Add Section
+        // ======================================
+        // BUTTON ACTIONS
+        // ======================================
+
+        // -------- Add Section --------
         btnAdd.addActionListener(e -> {
-            new AddSectionDialog(this, sectionService, null).setVisible(true);
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
+            if (parentWindow instanceof Frame frame) {
+                new AddSectionDialog(frame, sectionService, null).setVisible(true);
+            } else {
+                new AddSectionDialog(null, sectionService, null).setVisible(true);
+            }
+
             loadSections();
         });
 
-        // Edit Section
+        // -------- Edit Section --------
         btnEdit.addActionListener(e -> {
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
             int row = table.getSelectedRow();
             if (row == -1) {
-                JOptionPane.showMessageDialog(this, "Select a section to edit.");
+                JOptionPane.showMessageDialog(parentWindow, "Select a section to edit.");
                 return;
             }
+
             var section = tableModel.getSectionAt(row);
-            new AddSectionDialog(this, sectionService, section).setVisible(true);
+
+            if (parentWindow instanceof Frame frame) {
+                new AddSectionDialog(frame, sectionService, section).setVisible(true);
+            } else {
+                new AddSectionDialog(null, sectionService, section).setVisible(true);
+            }
+
             loadSections();
         });
 
-        // Delete Section
+        // -------- Delete Section --------
         btnDelete.addActionListener(e -> {
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
             int row = table.getSelectedRow();
             if (row == -1) {
-                JOptionPane.showMessageDialog(this, "Select a section to delete.");
+                JOptionPane.showMessageDialog(parentWindow, "Select a section to delete.");
                 return;
             }
 
             var section = tableModel.getSectionAt(row);
 
             int confirm = JOptionPane.showConfirmDialog(
-                    this,
+                    parentWindow,
                     "Delete section " + section.id + "?",
                     "Confirm Delete",
                     JOptionPane.YES_NO_OPTION
@@ -97,14 +130,14 @@ public class ManageSectionsUI extends JFrame {
 
                 if (!ok) {
                     JOptionPane.showMessageDialog(
-                            this,
+                            parentWindow,
                             "❌ Cannot delete this section.\nStudents are currently enrolled.",
                             "Delete Blocked",
                             JOptionPane.ERROR_MESSAGE
                     );
                 } else {
                     JOptionPane.showMessageDialog(
-                            this,
+                            parentWindow,
                             "Section deleted successfully.",
                             "Success",
                             JOptionPane.INFORMATION_MESSAGE
@@ -115,12 +148,25 @@ public class ManageSectionsUI extends JFrame {
             }
         });
 
-        // Refresh
+        // -------- Refresh --------
         btnRefresh.addActionListener(e -> loadSections());
     }
 
-    // Load all sections into the table
-    private void loadSections() {
+    // =======================================
+    // STYLE HELPER
+    // =======================================
+    private void styleButton(JButton b) {
+        b.setFont(new Font("Inter", Font.BOLD, 14));
+        b.setBackground(new Color(205, 235, 205));
+        b.setForeground(Color.BLACK);
+        b.setFocusPainted(false);
+        b.setPreferredSize(new Dimension(150, 32));
+    }
+
+    // =======================================
+    // PUBLIC LOAD METHOD
+    // =======================================
+    public void loadSections() {
         List<SectionService.SectionRow> list = sectionService.getAllSections();
         tableModel.setSections(list);
     }

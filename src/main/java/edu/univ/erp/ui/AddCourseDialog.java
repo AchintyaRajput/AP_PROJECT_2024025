@@ -5,9 +5,6 @@ import edu.univ.erp.service.CourseService;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Dialog for adding or editing a course.
- */
 public class AddCourseDialog extends JDialog {
 
     private final JTextField idField = new JTextField();
@@ -17,14 +14,15 @@ public class AddCourseDialog extends JDialog {
     private final CourseService courseService;
     private final CourseService.CourseRow editingCourse;
 
-    public AddCourseDialog(Frame owner, CourseService service, CourseService.CourseRow courseToEdit) {
-        super(owner, true);
+    // FIXED: Window → Frame conversion
+    public AddCourseDialog(Window parent, CourseService service, CourseService.CourseRow courseToEdit) {
+        super(parent instanceof Frame ? (Frame) parent : null, true);
         this.courseService = service;
         this.editingCourse = courseToEdit;
 
         setTitle(courseToEdit == null ? "Add Course" : "Edit Course");
-        setSize(400, 260);
-        setLocationRelativeTo(owner);
+        setSize(560, 420);
+        setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
 
         initForm();
@@ -34,9 +32,9 @@ public class AddCourseDialog extends JDialog {
     }
 
     private void initForm() {
-        JPanel form = new JPanel();
-        form.setLayout(new GridLayout(0, 2, 10, 10));
-        form.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        JPanel form = new JPanel(new GridLayout(0, 2, 10, 10));
+        form.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        form.setBackground(new Color(238, 247, 238));
 
         form.add(new JLabel("Course ID:"));
         form.add(idField);
@@ -67,17 +65,17 @@ public class AddCourseDialog extends JDialog {
 
     private void loadCourseData() {
         idField.setText(editingCourse.id);
-        idField.setEnabled(false); // Do not allow editing ID
+        idField.setEnabled(false);
         titleField.setText(editingCourse.title);
         creditsField.setText(String.valueOf(editingCourse.credits));
     }
 
     private void onSave() {
-        String courseId = idField.getText().trim();
+        String id = idField.getText().trim();
         String title = titleField.getText().trim();
         String creditsText = creditsField.getText().trim();
 
-        if (courseId.isEmpty() || title.isEmpty() || creditsText.isEmpty()) {
+        if (id.isEmpty() || title.isEmpty() || creditsText.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill all fields.");
             return;
         }
@@ -92,14 +90,10 @@ public class AddCourseDialog extends JDialog {
 
         boolean success;
 
-        // Editing existing course
-        if (editingCourse != null) {
-            success = courseService.updateCourse(courseId, title, credits);
-        }
-        // Adding a new course
-        else {
-            success = courseService.addCourse(courseId, title, credits);
-        }
+        if (editingCourse != null)
+            success = courseService.updateCourse(id, title, credits);
+        else
+            success = courseService.addCourse(id, title, credits);
 
         if (success) {
             JOptionPane.showMessageDialog(this, "Course saved successfully.");

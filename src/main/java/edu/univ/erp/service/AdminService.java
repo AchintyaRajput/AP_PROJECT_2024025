@@ -9,13 +9,22 @@ import java.util.List;
 
 public class AdminService {
 
+    /**
+     * Creates a new user.
+     * Always inserts into auth_db.users.
+     * Also inserts into erp_db.students or erp_db.instructors based on role.
+     *
+     * Returns: new user_id if success, -1 otherwise.
+     */
     public int createUser(String username, String plainPassword, String role,
                           String fullName, String email, String programOrDept, Integer year) {
 
         String hash = BCrypt.hashpw(plainPassword, BCrypt.gensalt());
         int newUserId = -1;
 
-        // ---------- INSERT INTO auth_db.users ----------
+        // =============================
+        // INSERT INTO auth_db.users
+        // =============================
         String insertUserSql =
                 "INSERT INTO auth_db.users (username, password_hash, role, status) " +
                         "VALUES (?, ?, ?, 'Active')";
@@ -33,18 +42,18 @@ public class AdminService {
                 return -1;
             }
 
-            // Retrieve generated user_id
+            // Fetch generated user_id
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) newUserId = rs.getInt(1);
             }
 
             if (newUserId == -1) {
-                System.err.println("❌ Could not fetch generated user_id");
+                System.err.println("❌ Could not retrieve generated user_id");
                 return -1;
             }
 
         } catch (SQLIntegrityConstraintViolationException dup) {
-            System.err.println("❌ Duplicate username or constraint violation: " + dup.getMessage());
+            System.err.println("❌ Duplicate username: " + dup.getMessage());
             return -1;
 
         } catch (Exception ex) {
@@ -52,9 +61,14 @@ public class AdminService {
             return -1;
         }
 
-        // ---------- INSERT INTO erp_db depending on role ----------
+
+        // ==================================================
+        // INSERT INTO ERP DATABASE (students / instructors)
+        // ERP insert failure should NOT undo auth user creation
+        // ==================================================
         try (Connection erpConn = DatabaseConnection.getERPConnection()) {
 
+            // ---------- Student ----------
             if ("Student".equalsIgnoreCase(role)) {
 
                 String insertStudent =
@@ -65,13 +79,17 @@ public class AdminService {
                     sp.setInt(1, newUserId);
                     sp.setString(2, fullName != null ? fullName : "");
                     sp.setString(3, programOrDept != null ? programOrDept : "");
+
                     if (year != null) sp.setInt(4, year);
                     else sp.setNull(4, Types.INTEGER);
+
                     sp.setString(5, email != null ? email : "");
                     sp.executeUpdate();
                 }
+            }
 
-            } else if ("Instructor".equalsIgnoreCase(role)) {
+            // ---------- Instructor ----------
+            else if ("Instructor".equalsIgnoreCase(role)) {
 
                 String insertInstructor =
                         "INSERT INTO instructors (instructor_id, name, department, email) " +
@@ -87,17 +105,16 @@ public class AdminService {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
+            System.err.println("⚠ ERP insert failed (but auth user created): " + e.getMessage());
         }
 
-        return newUserId;
+        return newUserId; // SUCCESS
     }
 
 
-    // ------------------------------------------------------------------------------
-    // GET ALL USERS
-    // ------------------------------------------------------------------------------
+    // ===================================
+    // READ ALL USERS
+    // ===================================
     public List<UserRow> getAllUsers() {
         List<UserRow> users = new ArrayList<>();
 
@@ -124,31 +141,37 @@ public class AdminService {
     }
 
 
-    // ------------------------------------------------------------------------------
+    // ===================================
     // DELETE USER FROM BOTH DATABASES
-    // ------------------------------------------------------------------------------
+    // ===================================
     public boolean deleteUser(int userId, String role) {
 
         try {
-            // Delete ERP profile first
+            // Delete from ERP DB first
             try (Connection erp = DatabaseConnection.getERPConnection()) {
 
                 if ("Student".equalsIgnoreCase(role)) {
-                    PreparedStatement ps = erp.prepareStatement("DELETE FROM students WHERE student_id=?");
+                    PreparedStatement ps = erp.prepareStatement(
+                            "DELETE FROM students WHERE student_id=?"
+                    );
                     ps.setInt(1, userId);
                     ps.executeUpdate();
                 }
 
                 else if ("Instructor".equalsIgnoreCase(role)) {
-                    PreparedStatement ps = erp.prepareStatement("DELETE FROM instructors WHERE instructor_id=?");
+                    PreparedStatement ps = erp.prepareStatement(
+                            "DELETE FROM instructors WHERE instructor_id=?"
+                    );
                     ps.setInt(1, userId);
                     ps.executeUpdate();
                 }
             }
 
-            // Delete from auth_db
+            // Then delete from auth_db
             try (Connection auth = DatabaseConnection.getAuthConnection()) {
-                PreparedStatement ps = auth.prepareStatement("DELETE FROM users WHERE user_id=?");
+                PreparedStatement ps = auth.prepareStatement(
+                        "DELETE FROM users WHERE user_id=?"
+                );
                 ps.setInt(1, userId);
                 ps.executeUpdate();
             }
@@ -162,9 +185,7 @@ public class AdminService {
     }
 
 
-    // ------------------------------------------------------------------------------
-    // Helper POJO to represent rows shown in JTable
-    // ------------------------------------------------------------------------------
+    // POJO for table model
     public static class UserRow {
         public int id;
         public String username;

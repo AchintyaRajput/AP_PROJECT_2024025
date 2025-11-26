@@ -10,9 +10,11 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Shows all students enrolled in a section.
- * Allows instructor to open GradeEntryUI for each student.
- * Supports maintenance banner.
+ * Modernized: InstructorSectionStudentsUI (Popup)
+ * - Clean white/green theme
+ * - Modern heading bar
+ * - Right-aligned buttons
+ * - Table inside bordered scroll panel
  */
 public class InstructorSectionStudentsUI extends JFrame {
 
@@ -27,93 +29,109 @@ public class InstructorSectionStudentsUI extends JFrame {
         this.currentInstructor = instructor;
         this.sectionId = sectionId;
 
-        setTitle("Students in Section " + sectionId);
-        setSize(900, 500);
+        setTitle("Section Students");
+        setSize(950, 570);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-        initUI();
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(Color.WHITE);
+
+        initHeader();
+        initTable();
+        initBottomButtons();
+
         loadStudents();
         setVisible(true);
     }
 
-    private void initUI() {
-        setLayout(new BorderLayout());
-
-        // ================== TOP HEADER ==================
+    private void initHeader() {
         JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(new Color(220, 240, 220)); // light green
+        top.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
 
-        JLabel title = new JLabel(
-                "Students Enrolled in Section " + sectionId,
-                SwingConstants.CENTER
-        );
+        JLabel title = new JLabel("Students in Section " + sectionId, SwingConstants.LEFT);
         title.setFont(new Font("SansSerif", Font.BOLD, 20));
-        top.add(title, BorderLayout.NORTH);
 
-        // ======= Maintenance Banner =======
+        top.add(title, BorderLayout.WEST);
+
+        // Maintenance banner
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
-                    "⚠ Maintenance Mode Active — Grade Editing Disabled",
+                    "⚠ Maintenance Mode — Grade Editing Disabled",
                     SwingConstants.CENTER
             );
             banner.setOpaque(true);
             banner.setBackground(new Color(255, 204, 0));
             banner.setForeground(Color.BLACK);
             banner.setFont(new Font("SansSerif", Font.BOLD, 14));
+            banner.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 
-            top.add(banner, BorderLayout.SOUTH);
+            JPanel wrapper = new JPanel(new BorderLayout());
+            wrapper.add(top, BorderLayout.NORTH);
+            wrapper.add(banner, BorderLayout.SOUTH);
+            add(wrapper, BorderLayout.NORTH);
+        } else {
+            add(top, BorderLayout.NORTH);
         }
+    }
 
-        add(top, BorderLayout.NORTH);
-
-
-        // ================== TABLE ==================
+    private void initTable() {
         model = new DefaultTableModel(new Object[]{
                 "Enrollment ID", "Student ID", "Name", "Email", "Final Grade"
         }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) { return false; }
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
 
         table = new JTable(model);
-        table.setRowHeight(25);
+        table.setRowHeight(26);
+        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
 
+        add(scroll, BorderLayout.CENTER);
+    }
 
-        // ================== BOTTOM BUTTONS ==================
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    private void initBottomButtons() {
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        bottom.setBackground(Color.WHITE);
 
-        JButton btnGrades = new JButton("Enter / Edit Grades");
-        JButton btnRefresh = new JButton("Refresh");
+        JButton btnGrades = makeButton("Enter / Edit Grades");
+        JButton btnRefresh = makeButton("Refresh");
 
         bottom.add(btnGrades);
         bottom.add(btnRefresh);
 
         add(bottom, BorderLayout.SOUTH);
 
-
-        // ACTIONS
         btnGrades.addActionListener(e -> openGradeEntry());
         btnRefresh.addActionListener(e -> loadStudents());
     }
 
+    private JButton makeButton(String text) {
+        JButton b = new JButton(text);
+        b.setFocusPainted(false);
+        b.setFont(new Font("SansSerif", Font.BOLD, 14));
+        b.setBackground(Color.WHITE);
+        b.setBorder(BorderFactory.createLineBorder(new Color(150, 150, 150)));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
 
-    // ================== LOAD STUDENTS ==================
     private void loadStudents() {
         model.setRowCount(0);
 
         List<InstructorService.StudentRow> students =
                 instructorService.getStudentsForSection(sectionId);
 
-        // Also fetch final grades
+        // load final grades
+        java.util.Map<Integer, String> finalGrades = new java.util.HashMap<>();
         String sqlFinal = """
             SELECT enrollment_id, final_grade
             FROM enrollments
             WHERE section_id = ?
         """;
-
-        java.util.Map<Integer, String> finalGrades = new java.util.HashMap<>();
 
         try (var conn = DatabaseConnection.getERPConnection();
              var ps = conn.prepareStatement(sqlFinal)) {
@@ -134,28 +152,15 @@ public class InstructorSectionStudentsUI extends JFrame {
 
         for (InstructorService.StudentRow s : students) {
             String fg = finalGrades.getOrDefault(s.enrollmentId, "");
-            model.addRow(new Object[]{
-                    s.enrollmentId,
-                    s.studentId,
-                    s.studentName,
-                    s.email,
-                    fg
-            });
+            model.addRow(new Object[]{ s.enrollmentId, s.studentId, s.studentName, s.email, fg });
         }
     }
 
-
-    // ================== OPEN GRADE ENTRY ==================
     private void openGradeEntry() {
         int row = table.getSelectedRow();
-
         if (row == -1) {
             JOptionPane.showMessageDialog(
-                    this,
-                    "Please select a student.",
-                    "No Selection",
-                    JOptionPane.WARNING_MESSAGE
-            );
+                    this, "Select a student first.", "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 

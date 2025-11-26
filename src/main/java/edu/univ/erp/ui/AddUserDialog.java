@@ -5,9 +5,6 @@ import edu.univ.erp.service.AdminService;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Dialog that allows the Admin to create a new user.
- */
 public class AddUserDialog extends JDialog {
 
     private final JTextField usernameField = new JTextField();
@@ -22,98 +19,132 @@ public class AddUserDialog extends JDialog {
 
     private final AdminService adminService;
 
-    public AddUserDialog(Frame owner, AdminService adminService) {
-        super(owner, "Add New User", true);
+    public AddUserDialog(Window owner, AdminService adminService) {
+        super(owner, "Add New User", ModalityType.APPLICATION_MODAL);
         this.adminService = adminService;
 
-        setSize(420, 400);
+        setSize(600, 650);     // ⬅ Increased height + width
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
 
-        initForm();
-        initButtons();
+        initUI();
     }
 
-    private void initForm() {
+    private void initUI() {
+
+        // ---------- TITLE ----------
+        JLabel title = new JLabel("Add New User", SwingConstants.CENTER);
+        title.setFont(new Font("SansSerif", Font.BOLD, 28));  // Bigger text
+        title.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+        add(title, BorderLayout.NORTH);
+
+        // ---------- FORM PANEL ----------
         JPanel form = new JPanel();
-        form.setLayout(new GridLayout(0,2,8,8));
-        form.setBorder(BorderFactory.createEmptyBorder(12,12,12,12));
+        form.setLayout(new GridLayout(0, 1, 12, 12));
+        form.setBackground(new Color(235, 245, 235));
+        form.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
 
-        // Labels + Fields
-        form.add(new JLabel("Username:"));
-        form.add(usernameField);
+        form.add(label("Username"));
+        form.add(field(usernameField));
 
-        form.add(new JLabel("Password:"));
-        form.add(passwordField);
+        form.add(label("Password"));
+        form.add(field(passwordField));
 
-        form.add(new JLabel("Full Name:"));
-        form.add(fullNameField);
+        form.add(label("Full Name"));
+        form.add(field(fullNameField));
 
-        form.add(new JLabel("Role:"));
-        form.add(roleCombo);
+        form.add(label("Role"));
+        form.add(field(roleCombo));
 
-        form.add(new JLabel("Email:"));
-        form.add(emailField);
+        form.add(label("Email"));
+        form.add(field(emailField));
 
-        form.add(new JLabel("Program / Dept:"));
-        form.add(programDeptField);
+        form.add(label("Program / Dept"));
+        form.add(field(programDeptField));
 
-        form.add(new JLabel("Year (only students):"));
-        form.add(yearField);
+        form.add(label("Year (Students Only)"));
+        form.add(field(yearField));
 
-        // Show/hide "year" dynamically based on role
+        JScrollPane scroll = new JScrollPane(form);
+        scroll.setBorder(null);
+
+        add(scroll, BorderLayout.CENTER);
+
+        // Enable/Disable Year field
         roleCombo.addActionListener(e -> {
             String role = (String) roleCombo.getSelectedItem();
             yearField.setEnabled("Student".equalsIgnoreCase(role));
         });
 
-        add(form, BorderLayout.CENTER);
-    }
-
-    private void initButtons() {
+        // ---------- BUTTON PANEL ----------
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnCreate = new JButton("Create");
+
+        JButton btnSave = new JButton("Create");
         JButton btnCancel = new JButton("Cancel");
 
+        styleButton(btnSave, new Color(100, 160, 60));
+        styleButton(btnCancel, new Color(180, 60, 60));
+
         bottom.add(btnCancel);
-        bottom.add(btnCreate);
+        bottom.add(btnSave);
+
         add(bottom, BorderLayout.SOUTH);
 
+        // Actions
         btnCancel.addActionListener(e -> dispose());
-        btnCreate.addActionListener(e -> onCreate());
+        btnSave.addActionListener(e -> onSave());
     }
 
-    // Called when CREATE button is pressed
-    private void onCreate() {
+    private JLabel label(String text) {
+        JLabel l = new JLabel(text, SwingConstants.CENTER);
+        l.setFont(new Font("SansSerif", Font.BOLD, 18));
+        return l;
+    }
+
+    private JComponent field(JComponent c) {
+        c.setPreferredSize(new Dimension(300, 40));
+        c.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        return c;
+    }
+
+    private void styleButton(JButton btn, Color color) {
+        btn.setBackground(color);
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 16));
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(120, 40));
+    }
+
+    private void onSave() {
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
         String fullName = fullNameField.getText().trim();
         String role = (String) roleCombo.getSelectedItem();
         String email = emailField.getText().trim();
-        String programDept = programDeptField.getText().trim();
+        String program = programDeptField.getText().trim();
 
         Integer year = null;
         if ("Student".equalsIgnoreCase(role)) {
             try {
                 year = Integer.parseInt(yearField.getText().trim());
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Invalid year value.");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Invalid year.");
                 return;
             }
         }
 
         if (username.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill required fields.");
+            JOptionPane.showMessageDialog(this, "Please fill all required fields.");
             return;
         }
 
-        int id = adminService.createUser(username, password, role, fullName, email, programDept, year);
+        int id = adminService.createUser(username, password, role, fullName, email, program, year);
 
         if (id > 0) {
             JOptionPane.showMessageDialog(this, "User created. User ID = " + id);
             dispose();
         } else {
-            JOptionPane.showMessageDialog(this, "Failed to create user (maybe duplicate username).");
+            JOptionPane.showMessageDialog(this, "Failed to create user.");
         }
     }
 }

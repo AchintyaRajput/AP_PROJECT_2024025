@@ -7,6 +7,7 @@ import edu.univ.erp.service.InstructorService;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
 
 public class InstructorDashboard extends JFrame {
@@ -14,24 +15,48 @@ public class InstructorDashboard extends JFrame {
     private final User currentInstructor;
     private final InstructorService instructorService = new InstructorService();
 
+    private JPanel cardPanel;
+    private CardLayout cardLayout;
+    private InstructorSectionsUI sectionsPanel;
+
     public InstructorDashboard(User instructor) {
         this.currentInstructor = instructor;
 
         setTitle("Instructor Dashboard - " + instructor.getUsername());
-        setSize(900, 520);
+        setSize(1100, 680);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // ===== HEADER PANEL =====
+        initTopBar();
+        initSidebarAndContent();
+
+        setVisible(true);
+    }
+
+    private void initTopBar() {
         JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(Color.WHITE);
+        top.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
-        JLabel heading = new JLabel("Instructor Dashboard - " + instructor.getUsername(),
-                SwingConstants.CENTER);
-        heading.setFont(new Font("SansSerif", Font.BOLD, 22));
-        top.add(heading, BorderLayout.NORTH);
+        JLabel heading = new JLabel("Instructor Dashboard - " + currentInstructor.getUsername());
+        heading.setFont(new Font("SansSerif", Font.BOLD, 20));
+        top.add(heading, BorderLayout.WEST);
 
-        // ===== MAINTENANCE BANNER =====
+        JButton bell = new JButton("\uD83D\uDD14");
+        bell.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        bell.setFocusable(false);
+        bell.setBackground(Color.WHITE);
+        bell.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        bell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        bell.addActionListener(e -> showNotificationsPopup());
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        right.setBackground(Color.WHITE);
+        right.add(bell);
+
+        top.add(right, BorderLayout.EAST);
+
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
                     "⚠ Maintenance Mode Active — Grade Editing Disabled",
@@ -41,55 +66,98 @@ public class InstructorDashboard extends JFrame {
             banner.setBackground(new Color(255, 204, 0));
             banner.setForeground(Color.BLACK);
             banner.setFont(new Font("SansSerif", Font.BOLD, 14));
-            top.add(banner, BorderLayout.SOUTH);
+
+            JPanel wrap = new JPanel(new BorderLayout());
+            wrap.add(top, BorderLayout.NORTH);
+            wrap.add(banner, BorderLayout.SOUTH);
+            add(wrap, BorderLayout.NORTH);
+        } else {
+            add(top, BorderLayout.NORTH);
         }
+    }
 
-        add(top, BorderLayout.NORTH);
+    private void initSidebarAndContent() {
 
-        // ===== LEFT: Notification Panel =====
-        NotificationPanel notifications = new NotificationPanel(instructor);
-        add(notifications, BorderLayout.WEST);
+        JPanel sidebar = new JPanel(new GridLayout(6, 1, 0, 12));
+        sidebar.setPreferredSize(new Dimension(220, 700));
+        sidebar.setBorder(BorderFactory.createEmptyBorder(30, 12, 30, 12));
+        sidebar.setBackground(new Color(220, 240, 220));
 
-        // ===== CENTER BUTTON PANEL =====
-        JPanel center = new JPanel(new GridLayout(4, 1, 20, 20));
-        center.setBorder(BorderFactory.createEmptyBorder(30, 120, 30, 120));
+        JLabel title = new JLabel("<html><b>Instructor</b></html>", SwingConstants.CENTER);
+        title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        sidebar.add(title);
 
-        JButton btnSections = new JButton("View My Sections");
-        JButton btnExportCSV = new JButton("Export Grades (CSV)");
-        JButton btnChangePass = new JButton("Change Password");
-        JButton btnLogout = new JButton("Logout");
+        JButton btnSections = makeButton("My Sections");
+        JButton btnExport = makeButton("Export Grades (CSV)");
+        JButton btnPass = makeButton("Change Password");
+        JButton btnLogout = makeButton("Logout");
 
-        center.add(btnSections);
-        center.add(btnExportCSV);
-        center.add(btnChangePass);
-        center.add(btnLogout);
+        sidebar.add(btnSections);
+        sidebar.add(btnExport);
+        sidebar.add(btnPass);
+        sidebar.add(btnLogout);
 
-        add(center, BorderLayout.CENTER);
+        add(sidebar, BorderLayout.WEST);
 
-        // ===== ACTION LISTENERS =====
-        btnSections.addActionListener(e ->
-                new InstructorSectionsUI(currentInstructor).setVisible(true)
-        );
+        cardLayout = new CardLayout();
+        cardPanel = new JPanel(cardLayout);
 
-        btnExportCSV.addActionListener(e -> exportCSV());
+        sectionsPanel = new InstructorSectionsUI(currentInstructor);
+        cardPanel.add(sectionsPanel, "sections");
 
-        btnChangePass.addActionListener(e ->
+        add(cardPanel, BorderLayout.CENTER);
+        showCard("sections");
+
+        btnSections.addActionListener(e -> {
+            sectionsPanel.loadSections();
+            showCard("sections");
+        });
+
+        btnExport.addActionListener(e -> exportCSV());
+
+        btnPass.addActionListener(e ->
                 new ChangePasswordUI(currentInstructor).setVisible(true)
         );
 
         btnLogout.addActionListener(e -> {
-            dispose();
-            JOptionPane.showMessageDialog(null, "Logged out successfully.");
+            JFrame f = (JFrame) SwingUtilities.getWindowAncestor((Component) e.getSource());
+            if (f != null) f.dispose();
+            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
         });
-
-        setVisible(true);
     }
 
-    // ============================================================
-    // CSV EXPORT LOGIC
-    // ============================================================
+    private JButton makeButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("SansSerif", Font.BOLD, 14));
+        b.setBackground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorder(BorderFactory.createLineBorder(new Color(150, 150, 150)));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    private void showCard(String key) {
+        cardLayout.show(cardPanel, key);
+    }
+
+    // ==============================================
+    // NOTIFICATIONS POPUP
+    // ==============================================
+    private void showNotificationsPopup() {
+        JDialog dlg = new JDialog(this, "Notifications", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setSize(420, 420);
+        dlg.setLocationRelativeTo(this);
+
+        dlg.add(new NotificationPanel(currentInstructor));
+
+        dlg.setVisible(true);
+    }
+
+    // ==============================================
+    // FIXED → EXPORT GRADES USING CORRECT SERVICE METHOD
+    // ==============================================
     private void exportCSV() {
-        // 1. Fetch sections
+
         List<InstructorService.SectionRow> sections =
                 instructorService.getInstructorSections(currentInstructor.getId());
 
@@ -98,55 +166,60 @@ public class InstructorDashboard extends JFrame {
             return;
         }
 
-        // 2. Let user choose a section
-        String[] sectionNames = new String[sections.size()];
+        String[] names = new String[sections.size()];
         for (int i = 0; i < sections.size(); i++) {
             var s = sections.get(i);
-            sectionNames[i] = s.sectionId + " - " + s.courseId + " (" + s.courseTitle + ")";
+            names[i] = s.sectionId + " - " + s.courseId + " (" + s.courseTitle + ")";
         }
 
         String choice = (String) JOptionPane.showInputDialog(
                 this,
-                "Select a section to export grades:",
-                "Export Grades CSV",
+                "Select section to export:",
+                "Export CSV",
                 JOptionPane.PLAIN_MESSAGE,
                 null,
-                sectionNames,
-                sectionNames[0]
+                names,
+                names[0]
         );
 
         if (choice == null) return;
 
-        int selectedIndex = -1;
-        for (int i = 0; i < sectionNames.length; i++) {
-            if (sectionNames[i].equals(choice)) {
-                selectedIndex = i;
-                break;
-            }
-        }
+        int index = java.util.Arrays.asList(names).indexOf(choice);
+        int sectionId = sections.get(index).sectionId;
 
-        if (selectedIndex == -1) return;
-
-        int sectionId = sections.get(selectedIndex).sectionId;
-
-        // 3. Choose save file
         JFileChooser chooser = new JFileChooser();
         chooser.setSelectedFile(new File("section_" + sectionId + "_grades.csv"));
 
-        int result = chooser.showSaveDialog(this);
-        if (result != JFileChooser.APPROVE_OPTION) return;
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File out = chooser.getSelectedFile();
 
-        File file = chooser.getSelectedFile();
-
-        // 4. Fetch and export
+        // ***** FIXED HERE → USE NEW METHOD *****
         List<InstructorService.GradeExportRow> rows =
                 instructorService.getGradesForExport(sectionId);
 
-        boolean ok = instructorService.exportGradesToCSV(file, rows);
+        if (rows.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No grade data available.");
+            return;
+        }
 
-        if (ok)
+        try (FileWriter fw = new FileWriter(out)) {
+            fw.write("Student,Component,Score,Max Marks,Weight,Weighted Score\n");
+
+            for (var r : rows) {
+                fw.write(r.studentName + "," +
+                        r.component + "," +
+                        r.score + "," +
+                        r.maxMarks + "," +
+                        r.weight + "," +
+                        r.weightedScore + "\n");
+            }
+
             JOptionPane.showMessageDialog(this, "CSV exported successfully!");
-        else
-            JOptionPane.showMessageDialog(this, "Error exporting CSV.");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Failed to export CSV: " + ex.getMessage());
+        }
     }
 }

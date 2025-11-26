@@ -3,163 +3,200 @@ package edu.univ.erp.ui;
 import edu.univ.erp.auth.LoginService;
 import edu.univ.erp.domain.User;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 
-/**
- * Improved Login UI: centered layout + non-flicker purple button
- */
 public class LoginUI extends JFrame {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JLabel messageLabel;
 
-    // --- ONLY CHANGED PARTS — KEEP ALL YOUR OLD CODE ABOVE THIS CLASS ---
-// Replace your constructor with THIS improved version:
-
     public LoginUI() {
 
+        // ==========================================
+        // THEME SETUP
+        // ==========================================
+        FlatLightLaf.setup();
+
+        UIManager.put("Button.arc", 12);
+        UIManager.put("Component.arc", 12);
+        UIManager.put("TextComponent.arc", 10);
+
         setTitle("ERP Login");
-        setSize(1200, 650);
+        setSize(1100, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
 
         JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);
         add(root);
 
-        // =============================
-        // LEFT IMAGE
-        // =============================
+        // ==========================================
+        // LEFT SIDE IMAGE
+        // ==========================================
         JPanel leftPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                Image img = new ImageIcon(
-                        getClass().getResource("/images/college.jpg")
-                ).getImage();
-                g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+                try {
+                    Image img = new ImageIcon(
+                            getClass().getResource("/images/college.jpg")
+                    ).getImage();
+                    g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+                } catch (Exception ignored) {}
             }
         };
-
-        leftPanel.setPreferredSize(new Dimension(520, 650));
+        leftPanel.setPreferredSize(new Dimension(480, 650));
         root.add(leftPanel, BorderLayout.WEST);
 
-        // =============================
-        // RIGHT LOGIN PANEL
-        // =============================
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setBackground(Color.WHITE);
-        root.add(wrapper, BorderLayout.CENTER);
+        // ==========================================
+        // RIGHT SIDE PANEL (Left aligned form)
+        // ==========================================
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBackground(Color.WHITE);
+        root.add(rightPanel, BorderLayout.CENTER);
 
-        JPanel loginPanel = new JPanel();
-        loginPanel.setBackground(Color.WHITE);
-        loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.Y_AXIS));
-        loginPanel.setBorder(new EmptyBorder(20, 100, 20, 100));
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(Color.WHITE);
+        content.setBorder(new EmptyBorder(40, 80, 40, 40));
 
-        wrapper.add(loginPanel);
+        rightPanel.add(content, BorderLayout.NORTH);
 
-        // =============================
-        // TITLE
-        // =============================
-        JLabel title = new JLabel("Sign In", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 42));   // Bigger
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginPanel.add(title);
-        loginPanel.add(Box.createVerticalStrut(40));
+        // ==========================================
+        // TITLE (outside the green box)
+        // ==========================================
+        JLabel title = new JLabel("University ERP");
+        title.setFont(new Font("Inter", Font.BOLD, 40));
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // =============================
-        // USERNAME LABEL + FIELD
-        // =============================
+        JLabel subtitle = new JLabel("Login to continue");
+        subtitle.setFont(new Font("Inter", Font.PLAIN, 16));
+        subtitle.setForeground(new Color(100, 100, 100));
+        subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        content.add(title);
+        content.add(Box.createVerticalStrut(5));
+        content.add(subtitle);
+        content.add(Box.createVerticalStrut(25));
+
+        // ==========================================
+        // GREEN LOGIN CARD BOX
+        // ==========================================
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(new Color(238, 247, 233));          // light green shade
+        card.setBorder(new EmptyBorder(25, 30, 25, 30));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.setMaximumSize(new Dimension(430, Integer.MAX_VALUE));
+        card.setBorder(new LineBorder(new Color(210, 230, 210), 2, true));
+
+        content.add(card);
+        content.add(Box.createVerticalStrut(15));
+
+        // ==========================================
+        // USERNAME
+        // ==========================================
         JLabel userLabel = new JLabel("Username");
-        userLabel.setFont(new Font("SansSerif", Font.PLAIN, 18)); // bigger
+        userLabel.setFont(new Font("Inter", Font.PLAIN, 15));
         userLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        loginPanel.add(userLabel);
 
         usernameField = new JTextField();
-        usernameField.setPreferredSize(new Dimension(420, 45));
-        usernameField.setMaximumSize(new Dimension(420, 45));
-        usernameField.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
-        usernameField.setFont(new Font("SansSerif", Font.PLAIN, 16));
-        loginPanel.add(usernameField);
+        usernameField.setPreferredSize(new Dimension(350, 42));
+        usernameField.setMaximumSize(new Dimension(350, 42));
+        usernameField.setFont(new Font("Inter", Font.PLAIN, 16));
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(180, 180, 180)),
+                new EmptyBorder(8, 10, 8, 10)
+        ));
 
-        loginPanel.add(Box.createVerticalStrut(25));
+        card.add(userLabel);
+        card.add(usernameField);
+        card.add(Box.createVerticalStrut(20));
 
-        // =============================
-        // PASSWORD LABEL + FIELD
-        // =============================
+        // ==========================================
+        // PASSWORD
+        // ==========================================
         JLabel passLabel = new JLabel("Password");
-        passLabel.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        passLabel.setFont(new Font("Inter", Font.PLAIN, 15));
         passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        loginPanel.add(passLabel);
 
         passwordField = new JPasswordField();
-        passwordField.setPreferredSize(new Dimension(420, 45));
-        passwordField.setMaximumSize(new Dimension(420, 45));
-        passwordField.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
-        passwordField.setFont(new Font("SansSerif", Font.PLAIN, 16));
-        loginPanel.add(passwordField);
+        passwordField.setPreferredSize(new Dimension(350, 42));
+        passwordField.setMaximumSize(new Dimension(350, 42));
+        passwordField.setFont(new Font("Inter", Font.PLAIN, 16));
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(new Color(180, 180, 180)),
+                new EmptyBorder(8, 10, 8, 10)
+        ));
 
-        loginPanel.add(Box.createVerticalStrut(10));
+        card.add(passLabel);
+        card.add(passwordField);
+        card.add(Box.createVerticalStrut(10));
 
-        // =============================
-        // FORGOT PASSWORD (one line, left)
-        // =============================
-        JLabel forgot = new JLabel("<HTML><U>Forgot Password?</U></HTML>");
-        forgot.setFont(new Font("SansSerif", Font.PLAIN, 16));
-        forgot.setForeground(new Color(120, 60, 230)); // purple
+        // ==========================================
+        // FORGOT PASSWORD
+        // ==========================================
+        JLabel forgot = new JLabel("<html><u>Forgot password?</u></html>");
+        forgot.setFont(new Font("Inter", Font.PLAIN, 14));
+        forgot.setForeground(new Color(20, 130, 80));
         forgot.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         forgot.setAlignmentX(Component.LEFT_ALIGNMENT);
-        loginPanel.add(forgot);
 
-        loginPanel.add(Box.createVerticalStrut(25));
+        card.add(forgot);
+        card.add(Box.createVerticalStrut(18));
 
-        // =============================
-        // ERROR MESSAGE LABEL
-        // =============================
-        messageLabel = new JLabel("", SwingConstants.CENTER);
+        // ==========================================
+        // MESSAGE LABEL (errors)
+        // ==========================================
+        messageLabel = new JLabel("", SwingConstants.LEFT);
         messageLabel.setForeground(Color.RED);
-        messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 15));
-        messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginPanel.add(messageLabel);
+        messageLabel.setFont(new Font("Inter", Font.PLAIN, 14));
+        messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        loginPanel.add(Box.createVerticalStrut(20));
+        card.add(messageLabel);
+        card.add(Box.createVerticalStrut(20));
 
-        // =============================
-        // LOGIN BUTTON (BIG PURPLE)
-        // =============================
-        JButton loginBtn = new JButton("Login");
-        loginBtn.setPreferredSize(new Dimension(420, 50));
-        loginBtn.setMaximumSize(new Dimension(420, 50));
-        loginBtn.setBackground(new Color(120, 60, 230));
-        loginBtn.setForeground(Color.WHITE);
+        // ==========================================
+        // SIGN IN BUTTON
+        // ==========================================
+        JButton loginBtn = new JButton("Sign In");
+        loginBtn.setPreferredSize(new Dimension(350, 45));
+        loginBtn.setMaximumSize(new Dimension(350, 45));
+        loginBtn.setFont(new Font("Inter", Font.BOLD, 18));
+        loginBtn.setForeground(Color.BLACK);
+        loginBtn.setBackground(new Color(139, 195, 74));
         loginBtn.setFocusPainted(false);
-        loginBtn.setFont(new Font("SansSerif", Font.BOLD, 20));
         loginBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        loginPanel.add(loginBtn);
 
         loginBtn.addActionListener(e -> doLogin());
 
-        loginPanel.add(Box.createVerticalStrut(30));
+        card.add(loginBtn);
+        card.add(Box.createVerticalStrut(22));
 
-        // =============================
-        // SIGN UP (big, purple, centered)
-        // =============================
-        JLabel signup = new JLabel("<HTML><U>Create an Account</U></HTML>");
-        signup.setFont(new Font("SansSerif", Font.BOLD, 18));
-        signup.setForeground(new Color(120, 60, 230));
-        signup.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // ==========================================
+        // CREATE ACCOUNT LINK
+        // ==========================================
+        JLabel signup = new JLabel("<html><u>Create an account</u></html>");
+        signup.setFont(new Font("Inter", Font.BOLD, 14));
+        signup.setForeground(new Color(20, 130, 80));
         signup.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        loginPanel.add(signup);
+        signup.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        card.add(signup);
 
         getRootPane().setDefaultButton(loginBtn);
     }
 
-    // ================================
-    // LOGIN LOGIC (WITH LOCKOUT)
-    // ================================
+    // =====================================================
+    // LOGIN LOGIC
+    // =====================================================
     private void doLogin() {
 
         String username = usernameField.getText().trim();
@@ -179,7 +216,7 @@ public class LoginUI extends JFrame {
         User user = service.login(username, password);
 
         if (user != null) {
-            messageLabel.setForeground(new Color(0, 140, 0));
+            messageLabel.setForeground(new Color(0, 120, 0));
             messageLabel.setText("Login successful!");
 
             SwingUtilities.invokeLater(() -> {
@@ -196,7 +233,6 @@ public class LoginUI extends JFrame {
             messageLabel.setText("Invalid login. Attempts left: " + left);
         }
     }
-
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));

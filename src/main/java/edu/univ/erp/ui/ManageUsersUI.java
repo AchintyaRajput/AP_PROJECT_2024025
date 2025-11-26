@@ -7,7 +7,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-public class ManageUsersUI extends JFrame {
+/**
+ * ManageUsersUI as a JPanel inside AdminDashboard (CardLayout)
+ * - Uses parent Frame for dialogs via SwingUtilities.getWindowAncestor(this)
+ * - No JFrame creation here
+ */
+public class ManageUsersUI extends JPanel {
 
     private final AdminService adminService = new AdminService();
     private UserTableModel tableModel;
@@ -18,23 +23,28 @@ public class ManageUsersUI extends JFrame {
     public ManageUsersUI(User currentAdmin) {
         this.currentAdmin = currentAdmin;
 
-        setTitle("Manage Users - Admin");
-        setSize(700, 450);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
         initUI();
         loadUsers();
     }
 
     private void initUI() {
         setLayout(new BorderLayout());
+        setBackground(Color.WHITE);
+        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        // ===== TOP PANEL (Buttons) =====
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // ==========================
+        // TOP ACTION BAR
+        // ==========================
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        topPanel.setBackground(Color.WHITE);
+
         JButton btnAdd = new JButton("Add User");
         JButton btnDelete = new JButton("Delete User");
         JButton btnRefresh = new JButton("Refresh");
+
+        styleButton(btnAdd);
+        styleButton(btnDelete);
+        styleButton(btnRefresh);
 
         topPanel.add(btnAdd);
         topPanel.add(btnDelete);
@@ -42,38 +52,55 @@ public class ManageUsersUI extends JFrame {
 
         add(topPanel, BorderLayout.NORTH);
 
-        // ===== TABLE =====
+        // ==========================
+        // TABLE
+        // ==========================
         tableModel = new UserTableModel(null);
         userTable = new JTable(tableModel);
         userTable.setRowHeight(24);
-        add(new JScrollPane(userTable), BorderLayout.CENTER);
 
-        // ===== BUTTON ACTIONS =====
+        JScrollPane scroller = new JScrollPane(userTable);
+        scroller.setBorder(BorderFactory.createLineBorder(new Color(210, 210, 210)));
+        add(scroller, BorderLayout.CENTER);
 
-        // Add User
+        // ==========================
+        // BUTTON ACTIONS
+        // ==========================
+
+        // ADD USER
         btnAdd.addActionListener(e -> {
-            new AddUserDialog(this, adminService).setVisible(true);
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
+            if (parentWindow instanceof Frame frame) {
+                new AddUserDialog(frame, adminService).setVisible(true);
+            } else {
+                new AddUserDialog(null, adminService).setVisible(true);
+            }
+
             loadUsers();
         });
 
-        // Delete User
+        // DELETE USER
         btnDelete.addActionListener(e -> {
             int selected = userTable.getSelectedRow();
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
             if (selected == -1) {
-                JOptionPane.showMessageDialog(this, "Select a user to delete.");
+                JOptionPane.showMessageDialog(parentWindow, "Select a user to delete.");
                 return;
             }
 
             AdminService.UserRow user = tableModel.getUserAt(selected);
 
-            // Prevent self-delete
+            // Prevent deleting own admin account
             if (user.id == currentAdmin.getUserId()) {
-                JOptionPane.showMessageDialog(this, "You cannot delete your own admin account.");
+                JOptionPane.showMessageDialog(parentWindow,
+                        "You cannot delete your own admin account.");
                 return;
             }
 
             int confirm = JOptionPane.showConfirmDialog(
-                    this,
+                    parentWindow,
                     "Are you sure you want to delete user '" + user.username + "'?",
                     "Confirm Delete",
                     JOptionPane.YES_NO_OPTION
@@ -82,21 +109,33 @@ public class ManageUsersUI extends JFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 boolean ok = adminService.deleteUser(user.id, user.role);
                 if (ok) {
-                    JOptionPane.showMessageDialog(this, "User deleted.");
+                    JOptionPane.showMessageDialog(parentWindow, "User deleted.");
                     loadUsers();
                 } else {
-                    JOptionPane.showMessageDialog(this, "Failed to delete user.");
+                    JOptionPane.showMessageDialog(parentWindow, "Failed to delete user.");
                 }
             }
         });
 
-        // Refresh
+        // REFRESH
         btnRefresh.addActionListener(e -> loadUsers());
     }
 
+    // ==========================
+    // STYLE HELPERS
+    // ==========================
+    private void styleButton(JButton btn) {
+        btn.setFont(new Font("Inter", Font.BOLD, 14));
+        btn.setFocusPainted(false);
+        btn.setBackground(new Color(205, 235, 205));
+        btn.setForeground(Color.BLACK);
+        btn.setPreferredSize(new Dimension(130, 32));
+    }
 
-    // ===== Load Users into Table =====
-    private void loadUsers() {
+    // ==========================
+    // PUBLIC LOAD METHOD
+    // ==========================
+    public void loadUsers() {
         List<AdminService.UserRow> list = adminService.getAllUsers();
         tableModel.setUsers(list);
     }

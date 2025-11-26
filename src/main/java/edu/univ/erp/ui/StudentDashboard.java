@@ -9,85 +9,164 @@ import java.awt.*;
 import java.io.FileWriter;
 import java.util.List;
 
+/**
+ * Modernized StudentDashboard with:
+ * - Sidebar navigation (text-only buttons)
+ * - Top bar with notification bell
+ * - CardLayout main content area
+ * - Home page with welcome message
+ * - All student panels embedded inside dashboard
+ */
 public class StudentDashboard extends JFrame {
 
     private final User currentStudent;
     private final StudentService studentService = new StudentService();
 
+    private String realName;   // <-- FIXED: Now a class field
+
+    private CardLayout cardLayout;
+    private JPanel cardPanel;
+
+    // Panels for each student function
+    private StudentAvailableSectionsUI availablePanel;
+    private StudentEnrollmentsUI enrollmentsPanel;
+    private StudentGradesUI gradesPanel;
+    private StudentTimetableUI timetablePanel;
+
     public StudentDashboard(User user) {
         this.currentStudent = user;
 
-        setTitle("Student Dashboard - " + user.getUsername());
-        setSize(900, 520);
+        // Fetch real student name from ERP DB
+        StudentService ss = new StudentService();
+        realName = ss.getStudentName(currentStudent.getId());
+
+        // fallback to username if ERP name missing
+        if (realName == null || realName.isBlank()) {
+            realName = currentStudent.getUsername();
+        }
+
+        setTitle("Student Dashboard - " + realName);
+        setSize(1100, 680);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // ===== HEADER =====
-        JPanel top = new JPanel(new BorderLayout());
-        JLabel heading = new JLabel("Student Dashboard - " + user.getUsername(),
-                SwingConstants.CENTER);
-        heading.setFont(new Font("SansSerif", Font.BOLD, 22));
-        top.add(heading, BorderLayout.NORTH);
+        initTopBar();
+        initSidebarAndContent();
 
-        // ===== Maintenance Banner =====
+        setVisible(true);
+    }
+
+    // =========================
+    // TOP BAR WITH BELL BUTTON
+    // =========================
+    private void initTopBar() {
+        JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(Color.WHITE);
+        top.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+
+        JLabel heading = new JLabel("Student Dashboard - " + realName, SwingConstants.CENTER);
+        heading.setFont(new Font("SansSerif", Font.BOLD, 20));
+        top.add(heading, BorderLayout.WEST);
+
+        // 🔔 Notification Bell
+        JButton bell = new JButton("\uD83D\uDD14");
+        bell.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        bell.setFocusPainted(false);
+        bell.setBackground(Color.WHITE);
+        bell.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        bell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        bell.addActionListener(e -> openNotificationsPopup());
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        right.setBackground(Color.WHITE);
+        right.add(bell);
+
+        top.add(right, BorderLayout.EAST);
+
+        // Maintenance Banner
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
-                    "⚠ Maintenance Mode Active — Enrollment & Drop are Disabled",
+                    "⚠ Maintenance Mode Active — Enrollment & Drop Disabled",
                     SwingConstants.CENTER
             );
             banner.setOpaque(true);
             banner.setBackground(new Color(255, 204, 0));
             banner.setForeground(Color.BLACK);
             banner.setFont(new Font("SansSerif", Font.BOLD, 14));
-            top.add(banner, BorderLayout.SOUTH);
+            banner.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+
+            JPanel wrapper = new JPanel(new BorderLayout());
+            wrapper.add(top, BorderLayout.NORTH);
+            wrapper.add(banner, BorderLayout.SOUTH);
+
+            add(wrapper, BorderLayout.NORTH);
+        } else {
+            add(top, BorderLayout.NORTH);
         }
+    }
 
-        add(top, BorderLayout.NORTH);
+    // =======================
+    // SIDEBAR + MAIN CONTENT
+    // =======================
+    private void initSidebarAndContent() {
 
-        // ===== LEFT: Notification Panel =====
-        NotificationPanel notifications = new NotificationPanel(user);
-        add(notifications, BorderLayout.WEST);
+        // ===== SIDEBAR =====
+        JPanel sidebar = new JPanel(new GridLayout(10, 1, 0, 12));
+        sidebar.setPreferredSize(new Dimension(220, 700));
+        sidebar.setBorder(BorderFactory.createEmptyBorder(30, 12, 30, 12));
+        sidebar.setBackground(new Color(220, 240, 220));
 
-        // ===== CENTER BUTTONS =====
-        JPanel center = new JPanel(new GridLayout(7, 1, 20, 20));
-        center.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+        JLabel sectionLabel = new JLabel("<html><b>Student</b></html>", SwingConstants.CENTER);
+        sectionLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        sidebar.add(sectionLabel);
 
-        JButton btnAvailable = new JButton("View Available Sections");
-        JButton btnEnrollments = new JButton("My Enrollments");
-        JButton btnGrades = new JButton("My Grades");
-        JButton btnTimetable = new JButton("My Timetable");
-        JButton btnTranscript = new JButton("Download Transcript (CSV)");
-        JButton btnChangePass = new JButton("Change Password");
-        JButton btnLogout = new JButton("Logout");
+        JButton btnHome = makeSidebarButton("Home");
+        JButton btnAvailable = makeSidebarButton("Available Sections");
+        JButton btnEnrollments = makeSidebarButton("My Enrollments");
+        JButton btnGrades = makeSidebarButton("My Grades");
+        JButton btnTimetable = makeSidebarButton("My Timetable");
+        JButton btnTranscript = makeSidebarButton("Download Transcript (CSV)");
+        JButton btnChangePass = makeSidebarButton("Change Password");
+        JButton btnLogout = makeSidebarButton("Logout");
 
-        center.add(btnAvailable);
-        center.add(btnEnrollments);
-        center.add(btnGrades);
-        center.add(btnTimetable);
-        center.add(btnTranscript);
-        center.add(btnChangePass);
-        center.add(btnLogout);
+        sidebar.add(btnHome);
+        sidebar.add(btnAvailable);
+        sidebar.add(btnEnrollments);
+        sidebar.add(btnGrades);
+        sidebar.add(btnTimetable);
+        sidebar.add(btnTranscript);
+        sidebar.add(btnChangePass);
+        sidebar.add(btnLogout);
 
-        add(center, BorderLayout.CENTER);
+        add(sidebar, BorderLayout.WEST);
 
-        // ===== ACTIONS =====
+        // ===== CARD PANEL =====
+        cardLayout = new CardLayout();
+        cardPanel = new JPanel(cardLayout);
+        cardPanel.setBackground(Color.WHITE);
 
-        btnAvailable.addActionListener(e ->
-                new StudentAvailableSectionsUI(currentStudent).setVisible(true)
-        );
+        availablePanel = new StudentAvailableSectionsUI(currentStudent);
+        enrollmentsPanel = new StudentEnrollmentsUI(currentStudent);
+        gradesPanel = new StudentGradesUI(currentStudent);
+        timetablePanel = new StudentTimetableUI(currentStudent);
 
-        btnEnrollments.addActionListener(e ->
-                new StudentEnrollmentsUI(currentStudent).setVisible(true)
-        );
+        // Home Panel
+        cardPanel.add(createHomePanel(), "home");
+        cardPanel.add(availablePanel, "available");
+        cardPanel.add(enrollmentsPanel, "enrollments");
+        cardPanel.add(gradesPanel, "grades");
+        cardPanel.add(timetablePanel, "timetable");
 
-        btnGrades.addActionListener(e ->
-                new StudentGradesUI(currentStudent).setVisible(true)
-        );
+        add(cardPanel, BorderLayout.CENTER);
+        showCard("home");
 
-        btnTimetable.addActionListener(e ->
-                new StudentTimetableUI(currentStudent).setVisible(true)
-        );
+        // ===== ACTION LISTENERS =====
+        btnHome.addActionListener(e -> showCard("home"));
+        btnAvailable.addActionListener(e -> showCard("available"));
+        btnEnrollments.addActionListener(e -> showCard("enrollments"));
+        btnGrades.addActionListener(e -> showCard("grades"));
+        btnTimetable.addActionListener(e -> showCard("timetable"));
 
         btnTranscript.addActionListener(e -> exportTranscript());
 
@@ -96,34 +175,82 @@ public class StudentDashboard extends JFrame {
         );
 
         btnLogout.addActionListener(e -> {
-            dispose();
-            JOptionPane.showMessageDialog(null, "Logged out successfully.");
+            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor((Component) e.getSource());
+            if (frame != null) frame.dispose();
+            SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
         });
-
-        setVisible(true);
     }
 
-    // ==========================
-    // CSV EXPORT IMPLEMENTATION
-    // ==========================
+    private JButton makeSidebarButton(String text) {
+        JButton b = new JButton(text);
+        b.setFocusPainted(false);
+        b.setFont(new Font("SansSerif", Font.BOLD, 14));
+        b.setBackground(Color.WHITE);
+        b.setBorder(BorderFactory.createLineBorder(new Color(150, 150, 150)));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    private void showCard(String key) {
+        cardLayout.show(cardPanel, key);
+    }
+
+    // ======================
+    // HOME PANEL
+    // ======================
+    private JPanel createHomePanel() {
+
+        JPanel p = new JPanel();
+        p.setBackground(Color.WHITE);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+
+        JLabel welcome = new JLabel("Welcome, " + realName);
+        welcome.setFont(new Font("SansSerif", Font.BOLD, 28));
+        welcome.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel info = new JLabel("<html><br>Use the sidebar to access all academic functions.</html>");
+        info.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        info.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        p.add(welcome);
+        p.add(info);
+
+        return p;
+    }
+
+    // ============================
+    // NOTIFICATION POPUP
+    // ============================
+    private void openNotificationsPopup() {
+        JDialog dlg = new JDialog(this, "Notifications", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setSize(420, 420);
+        dlg.setLocationRelativeTo(this);
+
+        NotificationPanel np = new NotificationPanel(currentStudent);
+        dlg.getContentPane().add(np);
+
+        dlg.setVisible(true);
+    }
+
+    // ============================
+    // EXPORT TRANSCRIPT (CSV)
+    // ============================
     private void exportTranscript() {
 
         List<StudentService.TranscriptRow> rows =
                 studentService.getTranscriptRows(currentStudent.getId());
 
         if (rows.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No transcript data available.",
-                    "Info",
-                    JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(
+                    this, "No transcript data available.", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Save Transcript CSV");
 
-        int result = chooser.showSaveDialog(this);
-        if (result != JFileChooser.APPROVE_OPTION) return;
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
 
         try (FileWriter fw = new FileWriter(chooser.getSelectedFile() + ".csv")) {
 
@@ -139,16 +266,12 @@ public class StudentDashboard extends JFrame {
             }
 
             JOptionPane.showMessageDialog(this,
-                    "Transcript exported successfully!",
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
+                    "Transcript exported successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                    "Failed to export transcript.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Failed to export transcript.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
