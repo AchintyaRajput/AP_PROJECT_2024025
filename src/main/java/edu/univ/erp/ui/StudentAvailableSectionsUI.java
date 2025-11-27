@@ -9,10 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Converted from JFrame → JPanel for use inside StudentMainFrame (CardLayout).
- * All logic preserved exactly as before.
- */
+
 public class StudentAvailableSectionsUI extends JPanel {
 
     private final User currentStudent;
@@ -33,7 +30,7 @@ public class StudentAvailableSectionsUI extends JPanel {
 
     private void initUI() {
 
-        // ===== HEADER PANEL =====
+        
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(Color.WHITE);
 
@@ -42,7 +39,7 @@ public class StudentAvailableSectionsUI extends JPanel {
         title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         top.add(title, BorderLayout.NORTH);
 
-        // ===== MAINTENANCE BANNER =====
+        
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
                     "⚠ Maintenance Mode Active — Enrollment is Disabled",
@@ -59,7 +56,7 @@ public class StudentAvailableSectionsUI extends JPanel {
 
         add(top, BorderLayout.NORTH);
 
-        // ===== TABLE MODEL =====
+        
         model = new DefaultTableModel(new Object[]{
                 "Section ID", "Course ID", "Title", "Instructor",
                 "Day/Time", "Room", "Available Seats",
@@ -67,7 +64,7 @@ public class StudentAvailableSectionsUI extends JPanel {
         }, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                return false; // prevent editing
+                return false; 
             }
         };
 
@@ -78,7 +75,7 @@ public class StudentAvailableSectionsUI extends JPanel {
         scroller.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(scroller, BorderLayout.CENTER);
 
-        // ===== BUTTON PANEL =====
+        
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottom.setBackground(Color.WHITE);
 
@@ -90,13 +87,13 @@ public class StudentAvailableSectionsUI extends JPanel {
 
         add(bottom, BorderLayout.SOUTH);
 
-        // ===== ACTIONS =====
+        
         btnEnroll.addActionListener(e -> enrollSelected());
         btnRefresh.addActionListener(e -> loadSections());
     }
 
     private void loadSections() {
-        model.setRowCount(0); // clear
+        model.setRowCount(0); 
 
         List<StudentService.SectionRow> list = studentService.getAvailableSections();
 
@@ -117,7 +114,7 @@ public class StudentAvailableSectionsUI extends JPanel {
 
     private void enrollSelected() {
 
-        // ===== BLOCK DURING MAINTENANCE =====
+        
         if (DatabaseConnection.isMaintenanceOn()) {
             JOptionPane.showMessageDialog(
                     SwingUtilities.getWindowAncestor(this),
@@ -142,7 +139,6 @@ public class StudentAvailableSectionsUI extends JPanel {
 
         int sectionId = (int) model.getValueAt(row, 0);
 
-        // Backend call
         String result = studentService.registerForSection(currentStudent.getId(), sectionId);
 
         if (result.equals("SUCCESS")) {
