@@ -9,25 +9,18 @@ import java.awt.*;
 import java.io.FileWriter;
 import java.util.List;
 
-/**
- * Modernized StudentDashboard with:
- * - Sidebar navigation (text-only buttons)
- * - Top bar with notification bell
- * - CardLayout main content area
- * - Home page with welcome message
- * - All student panels embedded inside dashboard
- */
+
 public class StudentDashboard extends JFrame {
 
     private final User currentStudent;
     private final StudentService studentService = new StudentService();
 
-    private String realName;   // <-- FIXED: Now a class field
+    private String realName;   
 
     private CardLayout cardLayout;
     private JPanel cardPanel;
 
-    // Panels for each student function
+    
     private StudentAvailableSectionsUI availablePanel;
     private StudentEnrollmentsUI enrollmentsPanel;
     private StudentGradesUI gradesPanel;
@@ -36,11 +29,11 @@ public class StudentDashboard extends JFrame {
     public StudentDashboard(User user) {
         this.currentStudent = user;
 
-        // Fetch real student name from ERP DB
+        
         StudentService ss = new StudentService();
         realName = ss.getStudentName(currentStudent.getId());
 
-        // fallback to username if ERP name missing
+        
         if (realName == null || realName.isBlank()) {
             realName = currentStudent.getUsername();
         }
@@ -57,9 +50,7 @@ public class StudentDashboard extends JFrame {
         setVisible(true);
     }
 
-    // =========================
-    // TOP BAR WITH BELL BUTTON
-    // =========================
+    
     private void initTopBar() {
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(Color.WHITE);
@@ -69,7 +60,7 @@ public class StudentDashboard extends JFrame {
         heading.setFont(new Font("SansSerif", Font.BOLD, 20));
         top.add(heading, BorderLayout.WEST);
 
-        // 🔔 Notification Bell
+        
         JButton bell = new JButton("\uD83D\uDD14");
         bell.setFont(new Font("SansSerif", Font.PLAIN, 20));
         bell.setFocusPainted(false);
@@ -84,7 +75,7 @@ public class StudentDashboard extends JFrame {
 
         top.add(right, BorderLayout.EAST);
 
-        // Maintenance Banner
+        
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
                     "⚠ Maintenance Mode Active — Enrollment & Drop Disabled",
@@ -106,12 +97,10 @@ public class StudentDashboard extends JFrame {
         }
     }
 
-    // =======================
-    // SIDEBAR + MAIN CONTENT
-    // =======================
+    
     private void initSidebarAndContent() {
 
-        // ===== SIDEBAR =====
+        
         JPanel sidebar = new JPanel(new GridLayout(10, 1, 0, 12));
         sidebar.setPreferredSize(new Dimension(220, 700));
         sidebar.setBorder(BorderFactory.createEmptyBorder(30, 12, 30, 12));
@@ -141,7 +130,7 @@ public class StudentDashboard extends JFrame {
 
         add(sidebar, BorderLayout.WEST);
 
-        // ===== CARD PANEL =====
+        
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
         cardPanel.setBackground(Color.WHITE);
@@ -151,7 +140,7 @@ public class StudentDashboard extends JFrame {
         gradesPanel = new StudentGradesUI(currentStudent);
         timetablePanel = new StudentTimetableUI(currentStudent);
 
-        // Home Panel
+        
         cardPanel.add(createHomePanel(), "home");
         cardPanel.add(availablePanel, "available");
         cardPanel.add(enrollmentsPanel, "enrollments");
@@ -161,7 +150,7 @@ public class StudentDashboard extends JFrame {
         add(cardPanel, BorderLayout.CENTER);
         showCard("home");
 
-        // ===== ACTION LISTENERS =====
+        
         btnHome.addActionListener(e -> showCard("home"));
         btnAvailable.addActionListener(e -> showCard("available"));
         btnEnrollments.addActionListener(e -> showCard("enrollments"));
@@ -195,9 +184,8 @@ public class StudentDashboard extends JFrame {
         cardLayout.show(cardPanel, key);
     }
 
-    // ======================
-    // HOME PANEL
-    // ======================
+   
+     
     private JPanel createHomePanel() {
 
         JPanel p = new JPanel();
@@ -219,9 +207,7 @@ public class StudentDashboard extends JFrame {
         return p;
     }
 
-    // ============================
-    // NOTIFICATION POPUP
-    // ============================
+    
     private void openNotificationsPopup() {
         JDialog dlg = new JDialog(this, "Notifications", Dialog.ModalityType.APPLICATION_MODAL);
         dlg.setSize(420, 420);
@@ -233,9 +219,7 @@ public class StudentDashboard extends JFrame {
         dlg.setVisible(true);
     }
 
-    // ============================
-    // EXPORT TRANSCRIPT (CSV)
-    // ============================
+    
     private void exportTranscript() {
 
         List<StudentService.TranscriptRow> rows =
