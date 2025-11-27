@@ -9,14 +9,14 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // ---- Set UI Look & Feel ----
+     
         try {
             FlatLightLaf.setup();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
-        // ---- Launch Login UI (ENTIRE PROJECT ENTRY) ----
+        
         SwingUtilities.invokeLater(() -> {
             LoginUI login = new LoginUI();
             login.setVisible(true);
