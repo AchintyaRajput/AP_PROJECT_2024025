@@ -140,9 +140,7 @@ public class InstructorDashboard extends JFrame {
         cardLayout.show(cardPanel, key);
     }
 
-    // ==============================================
-    // NOTIFICATIONS POPUP
-    // ==============================================
+    
     private void showNotificationsPopup() {
         JDialog dlg = new JDialog(this, "Notifications", Dialog.ModalityType.APPLICATION_MODAL);
         dlg.setSize(420, 420);
@@ -153,9 +151,7 @@ public class InstructorDashboard extends JFrame {
         dlg.setVisible(true);
     }
 
-    // ==============================================
-    // FIXED → EXPORT GRADES USING CORRECT SERVICE METHOD
-    // ==============================================
+    
     private void exportCSV() {
 
         List<InstructorService.SectionRow> sections =
