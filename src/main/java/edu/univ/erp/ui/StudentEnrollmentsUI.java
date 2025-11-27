@@ -12,10 +12,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Converted from JFrame → JPanel so it can load inside StudentMainFrame.
- * Includes drop-deadline enforcement and deadline display.
- */
+
 public class StudentEnrollmentsUI extends JPanel {
 
     private final User currentStudent;
@@ -37,7 +34,7 @@ public class StudentEnrollmentsUI extends JPanel {
 
     private void initUI() {
 
-        // ===== HEADER PANEL =====
+        
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(Color.WHITE);
 
@@ -46,7 +43,7 @@ public class StudentEnrollmentsUI extends JPanel {
         title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         top.add(title, BorderLayout.NORTH);
 
-        // ===== Maintenance Banner =====
+        
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
                     "⚠ Maintenance Mode Active — Dropping Courses is Disabled",
@@ -62,7 +59,7 @@ public class StudentEnrollmentsUI extends JPanel {
 
         add(top, BorderLayout.NORTH);
 
-        // ===== TABLE =====
+        
         model = new DefaultTableModel(new Object[]{
                 "Section ID", "Course ID", "Course Title",
                 "Instructor", "Day/Time", "Room", "Semester", "Year"
@@ -80,20 +77,18 @@ public class StudentEnrollmentsUI extends JPanel {
         scroller.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(scroller, BorderLayout.CENTER);
 
-        // ===================================================
-        // BOTTOM PANEL WITH DEADLINE + BUTTONS
-        // ===================================================
+        
         JPanel bottom = new JPanel(new BorderLayout());
         bottom.setBackground(Color.WHITE);
         bottom.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        // deadline label
+        
         deadlineLabel = new JLabel();
         deadlineLabel.setFont(new Font("SansSerif", Font.ITALIC, 12));
 
-        updateDeadlineLabel(); // set text + color
+        updateDeadlineLabel(); 
 
-        // buttons panel (right)
+        
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnPanel.setBackground(Color.WHITE);
 
@@ -108,14 +103,12 @@ public class StudentEnrollmentsUI extends JPanel {
 
         add(bottom, BorderLayout.SOUTH);
 
-        // ACTIONS
+        
         btnDrop.addActionListener(e -> dropSelected());
         btnRefresh.addActionListener(e -> loadEnrollments());
     }
 
-    // ===================================================
-    // DEADLINE LABEL UPDATER
-    // ===================================================
+    
     private void updateDeadlineLabel() {
         LocalDateTime ddl = DropDeadline.getDeadline();
 
@@ -151,12 +144,12 @@ public class StudentEnrollmentsUI extends JPanel {
             });
         }
 
-        updateDeadlineLabel(); // refresh on load
+        updateDeadlineLabel(); 
     }
 
     private void dropSelected() {
 
-        // ===== BLOCK DURING MAINTENANCE =====
+        
         if (DatabaseConnection.isMaintenanceOn()) {
             JOptionPane.showMessageDialog(
                     SwingUtilities.getWindowAncestor(this),
@@ -167,7 +160,7 @@ public class StudentEnrollmentsUI extends JPanel {
             return;
         }
 
-        // ===== GLOBAL DEADLINE ENFORCEMENT =====
+        
         LocalDateTime ddl = DropDeadline.getDeadline();
         if (LocalDateTime.now().isAfter(ddl)) {
             JOptionPane.showMessageDialog(
