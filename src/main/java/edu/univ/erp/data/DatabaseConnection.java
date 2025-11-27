@@ -10,7 +10,7 @@ public class DatabaseConnection {
     private static final String ERP_URL = "jdbc:mysql://localhost:3306/erp_db";
     private static final String AUTH_URL = "jdbc:mysql://localhost:3306/auth_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "Avi@2006"; // your password
+    private static final String PASSWORD = "Avi@2006"; 
 
     public static Connection getERPConnection() throws Exception {
         return DriverManager.getConnection(ERP_URL, USER, PASSWORD);
@@ -36,7 +36,7 @@ public class DatabaseConnection {
             e.printStackTrace();
         }
 
-        return false; // default if error
+        return false; 
     }
 
     public static boolean setMaintenance(boolean enable) {
