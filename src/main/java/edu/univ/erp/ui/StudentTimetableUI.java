@@ -19,11 +19,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
 
-/**
- * Updated Student Timetable UI
- * - Green highlight for classes
- * - Refresh button
- */
+
 public class StudentTimetableUI extends JPanel {
 
     private final User currentStudent;
@@ -89,7 +85,7 @@ public class StudentTimetableUI extends JPanel {
         table = new JTable(model);
         table.setRowHeight(28);
 
-        // custom renderer
+        
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             Color green = new Color(200, 240, 200);
 
