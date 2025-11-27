@@ -6,7 +6,6 @@ public class User {
     private String role;
     private String status;
 
-    // Constructor
     public User(int userId, String username, String role, String status) {
         this.userId = userId;
         this.username = username;
