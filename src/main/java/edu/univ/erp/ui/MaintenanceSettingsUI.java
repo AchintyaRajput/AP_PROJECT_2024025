@@ -16,9 +16,6 @@ public class MaintenanceSettingsUI extends JDialog {
 
         super((Frame) null, "Maintenance Mode Settings", true);
 
-        // ========================================
-        // THEME SETUP
-        // ========================================
         FlatLightLaf.setup();
         UIManager.put("Button.arc", 12);
         UIManager.put("Component.arc", 12);
@@ -34,9 +31,7 @@ public class MaintenanceSettingsUI extends JDialog {
         root.setBorder(new EmptyBorder(20, 25, 20, 25));
         add(root);
 
-        // ========================================
-        // TITLE
-        // ========================================
+        
         JLabel title = new JLabel("Maintenance Mode Control");
         title.setFont(new Font("Inter", Font.BOLD, 22));
         title.setForeground(new Color(40, 40, 40));
@@ -45,11 +40,9 @@ public class MaintenanceSettingsUI extends JDialog {
 
         root.add(title, BorderLayout.NORTH);
 
-        // ========================================
-        // GREEN CARD WITH STATUS
-        // ========================================
+        
         JPanel card = new JPanel();
-        card.setBackground(new Color(238, 247, 233)); // soft green
+        card.setBackground(new Color(238, 247, 233)); 
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(new EmptyBorder(20, 20, 20, 20));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -63,9 +56,7 @@ public class MaintenanceSettingsUI extends JDialog {
 
         updateStatusLabel();
 
-        // ========================================
-        // BUTTON PANEL
-        // ========================================
+        
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 8));
         btnPanel.setBackground(new Color(238, 247, 233));
 
@@ -84,9 +75,7 @@ public class MaintenanceSettingsUI extends JDialog {
         card.add(btnPanel);
     }
 
-    // ========================================
-    // BUTTON STYLE HELPERS
-    // ========================================
+    
     private void styleGreenButton(JButton btn) {
         btn.setPreferredSize(new Dimension(120, 40));
         btn.setFont(new Font("Inter", Font.BOLD, 15));
@@ -104,9 +93,7 @@ public class MaintenanceSettingsUI extends JDialog {
         btn.setFocusPainted(false);
     }
 
-    // ========================================
-    // LOGIC METHODS
-    // ========================================
+    
     private void updateStatusLabel() {
         boolean on = DatabaseConnection.isMaintenanceOn();
 
