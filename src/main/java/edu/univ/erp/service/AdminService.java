@@ -9,22 +9,14 @@ import java.util.List;
 
 public class AdminService {
 
-    /**
-     * Creates a new user.
-     * Always inserts into auth_db.users.
-     * Also inserts into erp_db.students or erp_db.instructors based on role.
-     *
-     * Returns: new user_id if success, -1 otherwise.
-     */
+   
     public int createUser(String username, String plainPassword, String role,
                           String fullName, String email, String programOrDept, Integer year) {
 
         String hash = BCrypt.hashpw(plainPassword, BCrypt.gensalt());
         int newUserId = -1;
 
-        // =============================
-        // INSERT INTO auth_db.users
-        // =============================
+        
         String insertUserSql =
                 "INSERT INTO auth_db.users (username, password_hash, role, status) " +
                         "VALUES (?, ?, ?, 'Active')";
@@ -42,7 +34,7 @@ public class AdminService {
                 return -1;
             }
 
-            // Fetch generated user_id
+            
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) newUserId = rs.getInt(1);
             }
@@ -62,13 +54,8 @@ public class AdminService {
         }
 
 
-        // ==================================================
-        // INSERT INTO ERP DATABASE (students / instructors)
-        // ERP insert failure should NOT undo auth user creation
-        // ==================================================
         try (Connection erpConn = DatabaseConnection.getERPConnection()) {
 
-            // ---------- Student ----------
             if ("Student".equalsIgnoreCase(role)) {
 
                 String insertStudent =
@@ -88,7 +75,6 @@ public class AdminService {
                 }
             }
 
-            // ---------- Instructor ----------
             else if ("Instructor".equalsIgnoreCase(role)) {
 
                 String insertInstructor =
@@ -108,13 +94,10 @@ public class AdminService {
             System.err.println("⚠ ERP insert failed (but auth user created): " + e.getMessage());
         }
 
-        return newUserId; // SUCCESS
+        return newUserId; /
     }
 
 
-    // ===================================
-    // READ ALL USERS
-    // ===================================
     public List<UserRow> getAllUsers() {
         List<UserRow> users = new ArrayList<>();
 
@@ -141,13 +124,10 @@ public class AdminService {
     }
 
 
-    // ===================================
-    // DELETE USER FROM BOTH DATABASES
-    // ===================================
+   
     public boolean deleteUser(int userId, String role) {
 
         try {
-            // Delete from ERP DB first
             try (Connection erp = DatabaseConnection.getERPConnection()) {
 
                 if ("Student".equalsIgnoreCase(role)) {
@@ -167,7 +147,6 @@ public class AdminService {
                 }
             }
 
-            // Then delete from auth_db
             try (Connection auth = DatabaseConnection.getAuthConnection()) {
                 PreparedStatement ps = auth.prepareStatement(
                         "DELETE FROM users WHERE user_id=?"
@@ -184,8 +163,7 @@ public class AdminService {
         }
     }
 
-
-    // POJO for table model
+    
     public static class UserRow {
         public int id;
         public String username;
