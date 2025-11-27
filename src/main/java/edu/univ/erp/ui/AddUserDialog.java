@@ -23,7 +23,7 @@ public class AddUserDialog extends JDialog {
         super(owner, "Add New User", ModalityType.APPLICATION_MODAL);
         this.adminService = adminService;
 
-        setSize(600, 650);     // ⬅ Increased height + width
+        setSize(600, 650);     
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
 
@@ -32,13 +32,12 @@ public class AddUserDialog extends JDialog {
 
     private void initUI() {
 
-        // ---------- TITLE ----------
+        
         JLabel title = new JLabel("Add New User", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 28));  // Bigger text
+        title.setFont(new Font("SansSerif", Font.BOLD, 28));  
         title.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         add(title, BorderLayout.NORTH);
 
-        // ---------- FORM PANEL ----------
         JPanel form = new JPanel();
         form.setLayout(new GridLayout(0, 1, 12, 12));
         form.setBackground(new Color(235, 245, 235));
@@ -70,13 +69,12 @@ public class AddUserDialog extends JDialog {
 
         add(scroll, BorderLayout.CENTER);
 
-        // Enable/Disable Year field
         roleCombo.addActionListener(e -> {
             String role = (String) roleCombo.getSelectedItem();
             yearField.setEnabled("Student".equalsIgnoreCase(role));
         });
 
-        // ---------- BUTTON PANEL ----------
+        
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         JButton btnSave = new JButton("Create");
@@ -90,7 +88,7 @@ public class AddUserDialog extends JDialog {
 
         add(bottom, BorderLayout.SOUTH);
 
-        // Actions
+       
         btnCancel.addActionListener(e -> dispose());
         btnSave.addActionListener(e -> onSave());
     }
