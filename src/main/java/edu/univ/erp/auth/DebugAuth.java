@@ -7,11 +7,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-/**
- * Debug helper: prints stored hash and result of BCrypt.checkpw for a given username/password.
- */
+
 public class DebugAuth {
-    // CHANGE these to the username/password you're testing
+    
     private static final String TEST_USERNAME = "admin";
     private static final String TEST_PASSWORD = "admin123";
 
