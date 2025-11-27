@@ -8,10 +8,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Converted from JFrame → JPanel for embedding inside InstructorDashboard.
- * All functionality preserved.
- */
+
 public class InstructorSectionsUI extends JPanel {
 
     private final User currentInstructor;
@@ -37,7 +34,7 @@ public class InstructorSectionsUI extends JPanel {
         title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         add(title, BorderLayout.NORTH);
 
-        // ===== TABLE MODEL =====
+        
         model = new DefaultTableModel(new Object[]{
                 "Section ID", "Course ID", "Course Title",
                 "Day/Time", "Room", "Semester", "Year"
@@ -55,7 +52,7 @@ public class InstructorSectionsUI extends JPanel {
         scroller.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(scroller, BorderLayout.CENTER);
 
-        // ===== BOTTOM BUTTONS =====
+        
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottom.setBackground(Color.WHITE);
 
@@ -69,7 +66,7 @@ public class InstructorSectionsUI extends JPanel {
 
         add(bottom, BorderLayout.SOUTH);
 
-        // ===== ACTIONS =====
+        
         btnViewStudents.addActionListener(e -> viewStudents());
         btnStats.addActionListener(e -> showStats());
         btnRefresh.addActionListener(e -> loadSections());
