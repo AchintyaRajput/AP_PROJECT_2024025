@@ -6,9 +6,7 @@ import edu.univ.erp.service.AdminService;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Small dialog that allows Admin to create a new user (Student/Instructor/Admin).
- */
+
 public class UserManagementDialog extends JDialog {
 
     private final JTextField usernameField = new JTextField();
