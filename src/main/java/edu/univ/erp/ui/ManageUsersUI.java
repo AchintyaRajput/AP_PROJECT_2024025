@@ -7,11 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/**
- * ManageUsersUI as a JPanel inside AdminDashboard (CardLayout)
- * - Uses parent Frame for dialogs via SwingUtilities.getWindowAncestor(this)
- * - No JFrame creation here
- */
+
 public class ManageUsersUI extends JPanel {
 
     private final AdminService adminService = new AdminService();
@@ -32,9 +28,7 @@ public class ManageUsersUI extends JPanel {
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        // ==========================
-        // TOP ACTION BAR
-        // ==========================
+        
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         topPanel.setBackground(Color.WHITE);
 
@@ -52,9 +46,7 @@ public class ManageUsersUI extends JPanel {
 
         add(topPanel, BorderLayout.NORTH);
 
-        // ==========================
-        // TABLE
-        // ==========================
+        
         tableModel = new UserTableModel(null);
         userTable = new JTable(tableModel);
         userTable.setRowHeight(24);
@@ -63,11 +55,7 @@ public class ManageUsersUI extends JPanel {
         scroller.setBorder(BorderFactory.createLineBorder(new Color(210, 210, 210)));
         add(scroller, BorderLayout.CENTER);
 
-        // ==========================
-        // BUTTON ACTIONS
-        // ==========================
-
-        // ADD USER
+        
         btnAdd.addActionListener(e -> {
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
 
@@ -80,7 +68,7 @@ public class ManageUsersUI extends JPanel {
             loadUsers();
         });
 
-        // DELETE USER
+        
         btnDelete.addActionListener(e -> {
             int selected = userTable.getSelectedRow();
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
@@ -92,7 +80,7 @@ public class ManageUsersUI extends JPanel {
 
             AdminService.UserRow user = tableModel.getUserAt(selected);
 
-            // Prevent deleting own admin account
+            
             if (user.id == currentAdmin.getUserId()) {
                 JOptionPane.showMessageDialog(parentWindow,
                         "You cannot delete your own admin account.");
@@ -117,13 +105,11 @@ public class ManageUsersUI extends JPanel {
             }
         });
 
-        // REFRESH
+        
         btnRefresh.addActionListener(e -> loadUsers());
     }
 
-    // ==========================
-    // STYLE HELPERS
-    // ==========================
+    
     private void styleButton(JButton btn) {
         btn.setFont(new Font("Inter", Font.BOLD, 14));
         btn.setFocusPainted(false);
@@ -132,9 +118,7 @@ public class ManageUsersUI extends JPanel {
         btn.setPreferredSize(new Dimension(130, 32));
     }
 
-    // ==========================
-    // PUBLIC LOAD METHOD
-    // ==========================
+    
     public void loadUsers() {
         List<AdminService.UserRow> list = adminService.getAllUsers();
         tableModel.setUsers(list);
