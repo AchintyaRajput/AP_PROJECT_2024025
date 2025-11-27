@@ -5,9 +5,7 @@ import edu.univ.erp.service.SectionService;
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
-/**
- * TableModel for displaying sections in a JTable.
- */
+
 public class SectionTableModel extends AbstractTableModel {
 
     private final String[] columns = {
