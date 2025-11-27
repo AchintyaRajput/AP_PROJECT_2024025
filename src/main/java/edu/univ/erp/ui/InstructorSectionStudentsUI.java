@@ -9,13 +9,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Modernized: InstructorSectionStudentsUI (Popup)
- * - Clean white/green theme
- * - Modern heading bar
- * - Right-aligned buttons
- * - Table inside bordered scroll panel
- */
+
 public class InstructorSectionStudentsUI extends JFrame {
 
     private final User currentInstructor;
@@ -47,7 +41,7 @@ public class InstructorSectionStudentsUI extends JFrame {
 
     private void initHeader() {
         JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(new Color(220, 240, 220)); // light green
+        top.setBackground(new Color(220, 240, 220)); 
         top.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
 
         JLabel title = new JLabel("Students in Section " + sectionId, SwingConstants.LEFT);
@@ -55,7 +49,7 @@ public class InstructorSectionStudentsUI extends JFrame {
 
         top.add(title, BorderLayout.WEST);
 
-        // Maintenance banner
+        
         if (DatabaseConnection.isMaintenanceOn()) {
             JLabel banner = new JLabel(
                     "⚠ Maintenance Mode — Grade Editing Disabled",
