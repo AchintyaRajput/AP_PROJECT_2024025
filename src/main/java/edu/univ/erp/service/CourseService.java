@@ -6,12 +6,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * CourseService - handles CRUD operations for courses.
- */
+
 public class CourseService {
 
-    // ---------------- GET ALL COURSES ----------------
+    
     public List<CourseRow> getAllCourses() {
         List<CourseRow> list = new ArrayList<>();
 
@@ -36,7 +34,7 @@ public class CourseService {
         return list;
     }
 
-    // ---------------- ADD COURSE ----------------
+ 
     public boolean addCourse(String courseId, String title, int credits) {
         String sql = "INSERT INTO courses (course_id, title, credits) VALUES (?, ?, ?)";
 
@@ -59,7 +57,6 @@ public class CourseService {
         }
     }
 
-    // ---------------- UPDATE COURSE ----------------
     public boolean updateCourse(String courseId, String newTitle, int newCredits) {
         String sql = "UPDATE courses SET title = ?, credits = ? WHERE course_id = ?";
 
@@ -78,7 +75,6 @@ public class CourseService {
         }
     }
 
-    // ---------------- DELETE COURSE ----------------
     public boolean deleteCourse(String courseId) {
         String sql = "DELETE FROM courses WHERE course_id = ?";
 
@@ -94,7 +90,7 @@ public class CourseService {
         }
     }
 
-    // ---------------- Helper Class ----------------
+    
     public static class CourseRow {
         public String id;
         public String title;
