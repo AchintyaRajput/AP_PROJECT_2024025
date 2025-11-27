@@ -12,19 +12,13 @@ import java.util.Map;
 
 public class LoginService {
 
-    // ================================
-    //  Memory-Based Failed Attempt Store
-    //  (Resets automatically when app restarts)
-    // ================================
+   
     private static final Map<String, Integer> failedAttempts = new HashMap<>();
     private static final int MAX_ATTEMPTS = 5;
 
-    // ================================
-    //             LOGIN
-    // ================================
+    
     public User login(String username, String password) {
 
-        // Check if user is blocked
         if (failedAttempts.getOrDefault(username, 0) >= MAX_ATTEMPTS) {
             System.out.println("❌ Account locked due to too many failed attempts.");
             return null;
@@ -43,7 +37,7 @@ public class LoginService {
                 if (BCrypt.checkpw(password, storedHash)) {
                     System.out.println("✅ Login successful for " + username);
 
-                    // Reset failed attempt counter on success
+                  
                     failedAttempts.remove(username);
 
                     return new User(
@@ -69,9 +63,7 @@ public class LoginService {
         return null;
     }
 
-    // ================================
-    // Increase failed attempt count
-    // ================================
+    
     private void increaseFail(String username) {
         int count = failedAttempts.getOrDefault(username, 0) + 1;
         failedAttempts.put(username, count);
@@ -87,11 +79,7 @@ public class LoginService {
     }
 
 
-    // ================================
-    //   CHANGE PASSWORD BACKEND
-    // ================================
-
-    // 1️⃣ VERIFY OLD PASSWORD
+    
     public boolean verifyPassword(int userId, String oldPassword) {
         try (Connection conn = DatabaseConnection.getAuthConnection()) {
 
@@ -112,7 +100,6 @@ public class LoginService {
         return false;
     }
 
-    // 2️⃣ UPDATE PASSWORD
     public boolean updatePassword(int userId, String newPassword) {
         try (Connection conn = DatabaseConnection.getAuthConnection()) {
 
@@ -131,7 +118,7 @@ public class LoginService {
         }
     }
 
-    // Optional helper
+ 
     public String getHashByUserId(int userId) {
         try (Connection conn = DatabaseConnection.getAuthConnection()) {
 
@@ -150,9 +137,7 @@ public class LoginService {
     }
 
 
-    // ================================
-    // Optional: register new users
-    // ================================
+    
     public void registerUser(String username, String password, String role) {
         String hash = BCrypt.hashpw(password, BCrypt.gensalt());
         try (Connection conn = DatabaseConnection.getAuthConnection()) {
