@@ -20,9 +20,7 @@ public class BackupService {
         this.dbName = dbName;
     }
 
-    // ---------------------------------------------------------
-    // BACKUP (stdout = SQL, stderr = LOG, never mixed)
-    // ---------------------------------------------------------
+  
     public Result backup(File outFile) {
         try {
             String dumpExe = mysqlBinFolder + "\\mysqldump.exe";
@@ -37,19 +35,17 @@ public class BackupService {
 
             ProcessBuilder pb = new ProcessBuilder(cmd);
 
-            // Do NOT merge stderr into stdout
+            
             pb.redirectErrorStream(false);
 
             Process p = pb.start();
 
-            // Write SQL from stdout into the file
             try (InputStream stdout = p.getInputStream();
                  FileOutputStream fos = new FileOutputStream(outFile)) {
 
                 stdout.transferTo(fos);
             }
 
-            // Capture error messages separately
             String stderrLog = read(p.getErrorStream());
 
             int exit = p.waitFor();
@@ -71,9 +67,7 @@ public class BackupService {
         }
     }
 
-    // ---------------------------------------------------------
-    // RESTORE (sqlFile → stdin)
-    // ---------------------------------------------------------
+  
     public Result restore(File sqlFile) {
         try {
             if (!sqlFile.exists()) {
@@ -94,7 +88,7 @@ public class BackupService {
 
             Process p = pb.start();
 
-            // Feed SQL file into mysql stdin
+           
             try (OutputStream os = p.getOutputStream();
                  FileInputStream fis = new FileInputStream(sqlFile)) {
 
@@ -117,7 +111,6 @@ public class BackupService {
         }
     }
 
-    // ---------------------------------------------------------
     private static String read(InputStream is) {
         try (Scanner sc = new Scanner(is, StandardCharsets.UTF_8)) {
             sc.useDelimiter("\\A");
