@@ -14,41 +14,35 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.concurrent.ExecutionException;
 
-/**
- * Unified Admin Dashboard using CardLayout.
- * - Embeds ManageUsersUI, ManageCoursesUI, ManageSectionsUI as panels
- * - Provides embedded Backup / Restore panel
- * - Keeps ChangePasswordUI and MaintenanceSettingsUI as popups
- * - Notification bell shows recent notifications (if notifications table exists)
- */
+
 public class AdminDashboard extends JFrame {
 
     private final User currentAdmin;
 
-    // Database / mysqldump config (adjust if needed)
+    
     private static final String MYSQL_BIN = "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin";
     private static final String DB_USER = "root";
     private static final String DB_PASS = "Avi@2006";
     private static final String DB_NAME = "erp_db";
 
-    // UI: cards
+    
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel cardPanel = new JPanel(cardLayout);
 
-    // Panels (embedded)
+    
     private ManageUsersUI usersPanel;
     private ManageCoursesUI coursesPanel;
     private ManageSectionsUI sectionsPanel;
     private JPanel backupPanel;
     private JPanel homePanel;
 
-    // Notification popup
+    
     private final JPopupMenu notifPopup = new JPopupMenu();
 
     public AdminDashboard(User admin) {
         this.currentAdmin = admin;
 
-        // Theme + UI defaults
+        
         FlatLightLaf.setup();
         UIManager.put("Button.arc", 12);
         UIManager.put("Component.arc", 12);
@@ -60,7 +54,7 @@ public class AdminDashboard extends JFrame {
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
 
-        // Top bar
+        
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBorder(new EmptyBorder(12, 18, 12, 18));
         topBar.setBackground(Color.WHITE);
@@ -69,7 +63,7 @@ public class AdminDashboard extends JFrame {
         lblTitle.setFont(new Font("Inter", Font.BOLD, 22));
         lblTitle.setForeground(new Color(30, 30, 30));
 
-        // Notification bell button (right)
+        
         JButton bellBtn = new JButton("\uD83D\uDD14");
         bellBtn.setFont(new Font("Inter", Font.PLAIN, 22));
         bellBtn.setFocusPainted(false);
@@ -83,20 +77,20 @@ public class AdminDashboard extends JFrame {
 
         add(topBar, BorderLayout.NORTH);
 
-        // Left sidebar
+        
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(new Color(225, 245, 225));
         sidebar.setBorder(new EmptyBorder(20, 14, 20, 14));
         sidebar.setPreferredSize(new Dimension(240, getHeight()));
 
-        // Sidebar header (admin info)
+         
         JLabel adminLabel = new JLabel("<html><b>" + escapeHtml(currentAdmin.getUsername()) + "</b><br/><small>Admin</small></html>");
         adminLabel.setFont(new Font("Inter", Font.PLAIN, 14));
         adminLabel.setBorder(new EmptyBorder(6, 6, 18, 6));
         sidebar.add(adminLabel);
 
-        // Buttons
+        
         sidebar.add(makeSidebarButton("Dashboard Home", e -> showHome()));
         sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(makeSidebarButton("Manage Users", e -> showUsers()));
@@ -113,39 +107,37 @@ public class AdminDashboard extends JFrame {
         sidebar.add(Box.createVerticalGlue());
         sidebar.add(makeSidebarButton("Logout", e -> {
 
-            // Extract the real JFrame from the button source
+            
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor((Component) e.getSource());
 
             if (frame != null) {
-                frame.dispose();  // closes AdminDashboard properly
+                frame.dispose(); 
             }
 
-            // Re-open LoginUI
+            
             SwingUtilities.invokeLater(() -> new LoginUI().setVisible(true));
         }));
 
 
         add(sidebar, BorderLayout.WEST);
 
-        // Card panel (center)
+        
         cardPanel.setBackground(Color.WHITE);
         cardPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
         add(cardPanel, BorderLayout.CENTER);
 
-        // Build embedded panels
+        
         buildPanels();
 
-        // Start on home card
+        
         showHome();
 
         setVisible(true);
     }
 
-    // -------------------------
-    // Build the component panels
-    // -------------------------
+    
     private void buildPanels() {
-        // HOME panel
+        
         homePanel = new JPanel();
         homePanel.setLayout(new BorderLayout());
         homePanel.setBackground(Color.WHITE);
@@ -179,26 +171,24 @@ public class AdminDashboard extends JFrame {
 
         cardPanel.add(homePanel, "home");
 
-        // Users panel (embedded)
+        
         usersPanel = new ManageUsersUI(currentAdmin);
         cardPanel.add(usersPanel, "users");
 
-        // Courses panel
+        
         coursesPanel = new ManageCoursesUI(currentAdmin);
         cardPanel.add(coursesPanel, "courses");
 
-        // Sections panel
+       
         sectionsPanel = new ManageSectionsUI(currentAdmin);
         cardPanel.add(sectionsPanel, "sections");
 
-        // Backup panel (embedded)
+        
         backupPanel = buildBackupPanel();
         cardPanel.add(backupPanel, "backup");
     }
 
-    // -------------------------
-    // Sidebar button helper
-    // -------------------------
+    
     private JButton makeSidebarButton(String text, java.awt.event.ActionListener a) {
         JButton btn = new JButton(text);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
@@ -211,16 +201,14 @@ public class AdminDashboard extends JFrame {
         return btn;
     }
 
-    // -------------------------
-    // Show helpers
-    // -------------------------
+   
     private void showHome() {
         cardLayout.show(cardPanel, "home");
     }
 
     private void showUsers() {
         cardLayout.show(cardPanel, "users");
-        // refresh
+        
         SwingUtilities.invokeLater(() -> {
             try { usersPanel.loadUsers(); } catch (Exception ignored) {}
         });
@@ -244,31 +232,25 @@ public class AdminDashboard extends JFrame {
         cardLayout.show(cardPanel, "backup");
     }
 
-    // -------------------------
-    // Open change password popup
-    // -------------------------
+    
     private void openChangePassword() {
         ChangePasswordUI dlg = new ChangePasswordUI(currentAdmin);
         dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);
     }
 
-    // -------------------------
-    // Open maintenance popup
-    // -------------------------
+    
     private void openMaintenance() {
         MaintenanceSettingsUI dlg = new MaintenanceSettingsUI();
         dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);
     }
 
-    // -------------------------
-    // Notifications (tries to read DB table `notifications`)
-    // -------------------------
+    
     private void toggleNotifications() {
         notifPopup.removeAll();
 
-        // Try to load notifications from DB if table exists, else fallback message
+        
         boolean loaded = false;
         try (Connection conn = DatabaseConnection.getERPConnection();
              PreparedStatement ps = conn.prepareStatement(
@@ -286,7 +268,7 @@ public class AdminDashboard extends JFrame {
                 loaded = true;
             }
         } catch (Exception ignored) {
-            // table may not exist, ignore and show fallback
+            
         }
 
         if (!loaded) {
@@ -295,14 +277,12 @@ public class AdminDashboard extends JFrame {
             notifPopup.add(it);
         }
 
-        // Show popup under the top-right corner
+       
         Point p = this.getLocationOnScreen();
         notifPopup.show(this, this.getWidth() - 260, 52);
     }
 
-    // -------------------------
-    // Backup panel builder
-    // -------------------------
+   
     private JPanel buildBackupPanel() {
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
@@ -339,7 +319,6 @@ public class AdminDashboard extends JFrame {
         btnRow.add(btnRestore);
         card.add(btnRow);
 
-        // Status area
         JTextArea statusArea = new JTextArea();
         statusArea.setEditable(false);
         statusArea.setFont(new Font("Inter", Font.PLAIN, 13));
@@ -350,7 +329,7 @@ public class AdminDashboard extends JFrame {
         card.add(Box.createVerticalStrut(12));
         card.add(new JScrollPane(statusArea));
 
-        // Actions
+        
         btnBackup.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle("Save ERP DB backup (.sql)");
@@ -452,9 +431,7 @@ public class AdminDashboard extends JFrame {
         return p;
     }
 
-    // -------------------------
-    // Progress dialog helper
-    // -------------------------
+    
     private JDialog createProgressDialog(String message) {
         JDialog dlg = new JDialog(this, true);
         dlg.setUndecorated(true);
@@ -471,9 +448,7 @@ public class AdminDashboard extends JFrame {
         return dlg;
     }
 
-    // -------------------------
-    // Styling helpers for backup panel
-    // -------------------------
+  
     private void styleGreenAction(JButton b) {
         b.setPreferredSize(new Dimension(180, 40));
         b.setFont(new Font("Inter", Font.BOLD, 14));
@@ -491,9 +466,7 @@ public class AdminDashboard extends JFrame {
         b.setFocusPainted(false);
     }
 
-    // -------------------------
-    // Utility: escape html for simple display
-    // -------------------------
+  
     private static String escapeHtml(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
