@@ -8,10 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * SectionService - CRUD logic for sections WITH strict day/time validation.
- * Adds instructor assignment notifications.
- */
+
 public class SectionService {
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
@@ -19,7 +16,7 @@ public class SectionService {
 
     private final NotificationService notificationService = new NotificationService();
 
-    // -------- NORMALIZE DAY TIME --------
+    
     private String normalizeDayTime(String dayTimeRaw) throws Exception {
         if (dayTimeRaw == null || !dayTimeRaw.contains(" "))
             throw new Exception("Invalid day/time format");
@@ -49,7 +46,7 @@ public class SectionService {
         return day + " " + start.format(TF) + "-" + end.format(TF);
     }
 
-    // Accept "9:00" or "09:00"
+   
     private LocalTime parseLenient(String s) throws Exception {
         try {
             return LocalTime.parse(s, DateTimeFormatter.ofPattern("H:mm"));
@@ -58,7 +55,7 @@ public class SectionService {
         }
     }
 
-    // -------- GET ALL SECTIONS --------
+    
     public List<SectionRow> getAllSections() {
         List<SectionRow> list = new ArrayList<>();
 
@@ -99,15 +96,13 @@ public class SectionService {
         return list;
     }
 
-    // =================================================================
-    // 1️⃣ ADD SECTION + NOTIFY INSTRUCTOR
-    // =================================================================
+    
     public boolean addSection(String courseId, int instructorId, String dayTime,
                               String room, int capacity, String semester, int year) {
         try {
             String normalized = normalizeDayTime(dayTime);
 
-            // Fetch course title
+            
             String courseTitle = fetchCourseTitle(courseId);
 
             String sql = """
@@ -130,12 +125,12 @@ public class SectionService {
 
                 ps.executeUpdate();
 
-                // Get generated section ID
+                
                 ResultSet keys = ps.getGeneratedKeys();
                 int newSectionId = -1;
                 if (keys.next()) newSectionId = keys.getInt(1);
 
-                // ===== NOTIFY INSTRUCTOR =====
+                
                 if (instructorId > 0) {
                     notificationService.createNotification(
                             instructorId,
@@ -155,15 +150,12 @@ public class SectionService {
         }
     }
 
-    // =================================================================
-    // 2️⃣ UPDATE SECTION + NOTIFY IF INSTRUCTOR CHANGES
-    // =================================================================
     public boolean updateSection(int sectionId, String courseId, int newInstructorId, String dayTime,
                                  String room, int capacity, String semester, int year) {
         try {
             String normalized = normalizeDayTime(dayTime);
 
-            // 1. Fetch course title & OLD instructor
+            
             String oldInstructorSql = """
                 SELECT instructor_id, c.title
                 FROM sections s
@@ -186,7 +178,7 @@ public class SectionService {
                 }
             }
 
-            // 2. Update section
+          
             String sql = """
                 UPDATE sections
                 SET course_id=?, instructor_id=?, day_time=?, room=?, 
@@ -211,11 +203,7 @@ public class SectionService {
                 if (!ok) return false;
             }
 
-            // ===============
-            // 🔔 NOTIFICATIONS
-            // ===============
-
-            // 1. Notify new instructor (only if changed)
+           
             if (newInstructorId > 0 && newInstructorId != oldInstructorId) {
                 notificationService.createNotification(
                         newInstructorId,
@@ -226,7 +214,7 @@ public class SectionService {
                 );
             }
 
-            // 2. Notify old instructor
+            
             if (oldInstructorId > 0 && oldInstructorId != newInstructorId) {
                 notificationService.createNotification(
                         oldInstructorId,
@@ -244,13 +232,11 @@ public class SectionService {
         }
     }
 
-    // =================================================================
-    // 3️⃣ DELETE SECTION (NO NOTIFICATIONS)
-    // =================================================================
+    
     public boolean deleteSection(int sectionId) {
         try (Connection conn = DatabaseConnection.getERPConnection()) {
 
-            // check if students enrolled
+            
             String checkSql = "SELECT COUNT(*) FROM enrollments WHERE section_id = ?";
             PreparedStatement psCheck = conn.prepareStatement(checkSql);
             psCheck.setInt(1, sectionId);
@@ -274,7 +260,7 @@ public class SectionService {
         }
     }
 
-    // Helper method — fetch course title
+    
     private String fetchCourseTitle(String courseId) {
         try (Connection conn = DatabaseConnection.getERPConnection();
              PreparedStatement ps = conn.prepareStatement(
@@ -295,7 +281,7 @@ public class SectionService {
         return "";
     }
 
-    // -------- Helper Data Class --------
+    
     public static class SectionRow {
         public int id;
         public String courseId;
