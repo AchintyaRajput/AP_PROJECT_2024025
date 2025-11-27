@@ -7,18 +7,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * InstructorService – fully updated to support:
- *  - max_marks
- *  - weighted scoring formula (score/max_marks)*weight
- *  - exporting weighted scores
- *  - corrected Stats calculation from final_grade
- */
+
 public class InstructorService {
 
-    // ============================================
-    // MODEL CLASSES
-    // ============================================
+  
     public static class SectionRow {
         public int sectionId;
         public String courseId;
@@ -69,9 +61,8 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // GET SECTIONS FOR INSTRUCTOR
-    // ============================================
+    
+    
     public List<SectionRow> getInstructorSections(int instructorId) {
         List<SectionRow> list = new ArrayList<>();
 
@@ -110,9 +101,6 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // GET STUDENTS IN A SECTION
-    // ============================================
     public List<StudentRow> getStudentsForSection(int sectionId) {
         List<StudentRow> list = new ArrayList<>();
 
@@ -146,9 +134,7 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // GET GRADE BREAKDOWN (includes max_marks)
-    // ============================================
+    
     public List<GradeRow> getGradesForEnrollment(int enrollmentId) {
         List<GradeRow> list = new ArrayList<>();
 
@@ -182,9 +168,7 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // SAVE OR UPDATE GRADE ENTRY
-    // ============================================
+   
     public boolean saveGrade(int enrollmentId, String component,
                              double score, double weight, double maxMarks) {
 
@@ -241,9 +225,7 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // EXPORT GRADES FOR CSV (fixed missing fields)
-    // ============================================
+
     public List<GradeExportRow> getGradesForExport(int sectionId) {
 
         List<GradeExportRow> list = new ArrayList<>();
@@ -294,9 +276,6 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // FINAL GRADE CALCULATION (weighted)
-    // ============================================
     public boolean calculateFinalGrade(int enrollmentId) {
 
         String sql = """
@@ -341,9 +320,7 @@ public class InstructorService {
     }
 
 
-    // ============================================
-    // CLASS STATISTICS USING FINAL_GRADE
-    // ============================================
+   
     public StatsRow getSectionStats(int sectionId) {
 
         List<Double> grades = new ArrayList<>();
@@ -388,7 +365,6 @@ public class InstructorService {
         else
             median = (grades.get(n / 2 - 1) + grades.get(n / 2)) / 2.0;
 
-        // Pass = >= 40
         int pass = 0, fail = 0;
         for (double g : grades) {
             if (g >= 40) pass++;
