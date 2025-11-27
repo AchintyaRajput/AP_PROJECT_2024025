@@ -10,10 +10,7 @@ import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-/**
- * Reusable NotificationPanel for dashboards.
- * Usage: new NotificationPanel(currentUser). The panel shows unread count, list, Refresh and Mark all read.
- */
+
 public class NotificationPanel extends JPanel {
 
     private final User currentUser;
@@ -40,7 +37,7 @@ public class NotificationPanel extends JPanel {
         lblHeader.setFont(lblHeader.getFont().deriveFont(Font.PLAIN, 12f));
         add(lblHeader, BorderLayout.NORTH);
 
-        // Custom renderer: show unread bold + message + timestamp
+        
         list.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
             JPanel p = new JPanel(new BorderLayout());
             p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
@@ -72,7 +69,7 @@ public class NotificationPanel extends JPanel {
         bottom.add(btnMarkAll);
         add(bottom, BorderLayout.SOUTH);
 
-        // Double-click to view details and mark read
+        
         list.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -94,11 +91,11 @@ public class NotificationPanel extends JPanel {
     }
 
     private void showNotification(NotificationService.NotificationRow row) {
-        // Mark read in DB
+        
         if (!row.isRead) {
             notificationService.markAsRead(row.id);
         }
-        // Simple message dialog with optional link text (you can extend to open UI)
+        
         String info = row.message + (row.link != null ? ("\n\nLink: " + row.link) : "");
         JOptionPane.showMessageDialog(this, info, "Notification", JOptionPane.INFORMATION_MESSAGE);
         reload();
