@@ -7,10 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-/**
- * ManageSectionsUI as JPanel inside AdminDashboard.
- * Uses parent Frame via SwingUtilities.getWindowAncestor(this) for dialogs.
- */
+
 public class ManageSectionsUI extends JPanel {
 
     private final SectionService sectionService = new SectionService();
@@ -32,9 +29,7 @@ public class ManageSectionsUI extends JPanel {
 
     private void initUI() {
 
-        // ======================================
-        // TOP BUTTON BAR
-        // ======================================
+        
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         top.setBackground(Color.WHITE);
 
@@ -55,9 +50,7 @@ public class ManageSectionsUI extends JPanel {
 
         add(top, BorderLayout.NORTH);
 
-        // ======================================
-        // TABLE
-        // ======================================
+        
         tableModel = new SectionTableModel(null);
         table = new JTable(tableModel);
         table.setRowHeight(24);
@@ -67,11 +60,7 @@ public class ManageSectionsUI extends JPanel {
 
         add(scroll, BorderLayout.CENTER);
 
-        // ======================================
-        // BUTTON ACTIONS
-        // ======================================
-
-        // -------- Add Section --------
+        
         btnAdd.addActionListener(e -> {
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
 
@@ -84,7 +73,7 @@ public class ManageSectionsUI extends JPanel {
             loadSections();
         });
 
-        // -------- Edit Section --------
+        
         btnEdit.addActionListener(e -> {
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
 
@@ -105,7 +94,7 @@ public class ManageSectionsUI extends JPanel {
             loadSections();
         });
 
-        // -------- Delete Section --------
+        
         btnDelete.addActionListener(e -> {
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
 
@@ -148,13 +137,11 @@ public class ManageSectionsUI extends JPanel {
             }
         });
 
-        // -------- Refresh --------
+        
         btnRefresh.addActionListener(e -> loadSections());
     }
 
-    // =======================================
-    // STYLE HELPER
-    // =======================================
+    
     private void styleButton(JButton b) {
         b.setFont(new Font("Inter", Font.BOLD, 14));
         b.setBackground(new Color(205, 235, 205));
@@ -163,9 +150,7 @@ public class ManageSectionsUI extends JPanel {
         b.setPreferredSize(new Dimension(150, 32));
     }
 
-    // =======================================
-    // PUBLIC LOAD METHOD
-    // =======================================
+    
     public void loadSections() {
         List<SectionService.SectionRow> list = sectionService.getAllSections();
         tableModel.setSections(list);
