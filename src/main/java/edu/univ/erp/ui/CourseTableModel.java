@@ -5,9 +5,7 @@ import edu.univ.erp.service.CourseService;
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
-/**
- * Table model to display courses in a JTable.
- */
+
 public class CourseTableModel extends AbstractTableModel {
 
     private final String[] columns = {"Course ID", "Title", "Credits"};
