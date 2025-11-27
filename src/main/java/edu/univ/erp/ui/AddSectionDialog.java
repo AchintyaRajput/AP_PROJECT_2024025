@@ -54,9 +54,7 @@ public class AddSectionDialog extends JDialog {
         if (editingSection != null) loadData();
     }
 
-    // =============================
-    // Time interval combos
-    // =============================
+   
     private void populateTimeBoxes() {
         LocalTime s = LocalTime.of(9, 0);
         LocalTime lastStart = LocalTime.of(16, 30);
@@ -102,9 +100,7 @@ public class AddSectionDialog extends JDialog {
         }
     }
 
-    // ========================
-    // BUILD UI
-    // ========================
+    
     private void initUI() {
 
         JPanel form = new JPanel(new GridLayout(0, 1, 12, 16));
@@ -162,7 +158,7 @@ public class AddSectionDialog extends JDialog {
 
     private void loadData() {
 
-        // Select course
+       
         for (int i = 0; i < courseBox.getItemCount(); i++) {
             if (courseBox.getItemAt(i).startsWith(editingSection.courseId)) {
                 courseBox.setSelectedIndex(i);
@@ -170,7 +166,7 @@ public class AddSectionDialog extends JDialog {
             }
         }
 
-        // Select instructor
+        
         for (int i = 0; i < instructorBox.getItemCount(); i++) {
             InstructorItem ii = instructorBox.getItemAt(i);
             if (ii.id == editingSection.instructorId) {
@@ -179,7 +175,7 @@ public class AddSectionDialog extends JDialog {
             }
         }
 
-        // Parse times
+        
         try {
             String[] parts = editingSection.dayTime.split(" ");
             dayBox.setSelectedItem(parts[0]);
@@ -201,9 +197,7 @@ public class AddSectionDialog extends JDialog {
         yearField.setText(String.valueOf(editingSection.year));
     }
 
-    // ========================
-    // VALIDATION + SAVE
-    // ========================
+    
     private boolean validateFields() {
 
         if (courseBox.getSelectedItem() == null) {
@@ -231,7 +225,7 @@ public class AddSectionDialog extends JDialog {
             return false;
         }
 
-        // Capacity validation
+        
         try {
             int cap = Integer.parseInt(capacityField.getText().trim());
             if (cap < 0) {
@@ -243,13 +237,13 @@ public class AddSectionDialog extends JDialog {
             return false;
         }
 
-        // Semester
+        
         if (semesterField.getText().trim().isEmpty()) {
             error("Semester cannot be empty.");
             return false;
         }
 
-        // Year validation
+        
         try {
             int year = Integer.parseInt(yearField.getText().trim());
             if (year < 2000 || year > 2100) {
@@ -261,7 +255,7 @@ public class AddSectionDialog extends JDialog {
             return false;
         }
 
-        // Time logic
+       
         LocalTime start = LocalTime.parse(startTimeBox.getSelectedItem().toString(), TF);
         LocalTime end = LocalTime.parse(endTimeBox.getSelectedItem().toString(), TF);
 
@@ -320,7 +314,6 @@ public class AddSectionDialog extends JDialog {
         JOptionPane.showMessageDialog(this, msg, "Input Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    // Helper class
     private static class InstructorItem {
         int id;
         String name;
