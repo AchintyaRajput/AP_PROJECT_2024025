@@ -14,7 +14,7 @@ public class AddCourseDialog extends JDialog {
     private final CourseService courseService;
     private final CourseService.CourseRow editingCourse;
 
-    // FIXED: Window → Frame conversion
+    
     public AddCourseDialog(Window parent, CourseService service, CourseService.CourseRow courseToEdit) {
         super(parent instanceof Frame ? (Frame) parent : null, true);
         this.courseService = service;
