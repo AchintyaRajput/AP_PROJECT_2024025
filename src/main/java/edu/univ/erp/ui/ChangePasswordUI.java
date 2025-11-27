@@ -23,9 +23,7 @@ public class ChangePasswordUI extends JDialog {
         super((Frame) null, "Change Password", true);
         this.currentUser = user;
 
-        // -----------------------------
-        // THEME SETUP
-        // -----------------------------
+        
         FlatLightLaf.setup();
         UIManager.put("Button.arc", 12);
         UIManager.put("Component.arc", 12);
@@ -41,9 +39,7 @@ public class ChangePasswordUI extends JDialog {
         root.setBorder(new EmptyBorder(20, 25, 20, 25));
         add(root);
 
-        // -----------------------------
-        // TITLE
-        // -----------------------------
+        
         JLabel title = new JLabel("Change Password");
         title.setFont(new Font("Inter", Font.BOLD, 24));
         title.setForeground(new Color(40, 40, 40));
@@ -52,31 +48,27 @@ public class ChangePasswordUI extends JDialog {
 
         root.add(title, BorderLayout.NORTH);
 
-        // -----------------------------
-        // MAIN FORM PANEL (soft green box)
-        // -----------------------------
+        
         JPanel card = new JPanel();
-        card.setBackground(new Color(238, 247, 233)); // very light green
+        card.setBackground(new Color(238, 247, 233)); 
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(new EmptyBorder(20, 22, 20, 22));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         root.add(card, BorderLayout.CENTER);
 
-        // -------- Field Builder Helper --------
+        
         addField(card, "Old Password", oldPassField);
         addField(card, "New Password", newPassField);
         addField(card, "Confirm Password", confirmPassField);
 
-        // Message Label
+        
         messageLabel.setFont(new Font("Inter", Font.PLAIN, 14));
         messageLabel.setForeground(Color.RED);
         messageLabel.setBorder(new EmptyBorder(8, 0, 8, 0));
         card.add(messageLabel);
 
-        // -----------------------------
-        // BUTTONS PANEL
-        // -----------------------------
+        
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 5));
         btnPanel.setBackground(new Color(238, 247, 233));
 
@@ -91,7 +83,7 @@ public class ChangePasswordUI extends JDialog {
         JButton btnUpdate = new JButton("Update Password");
         btnUpdate.setPreferredSize(new Dimension(160, 38));
         btnUpdate.setFont(new Font("Inter", Font.BOLD, 14));
-        btnUpdate.setBackground(new Color(139, 195, 74));  // soft green
+        btnUpdate.setBackground(new Color(139, 195, 74));  
         btnUpdate.setForeground(Color.BLACK);
         btnUpdate.setFocusPainted(false);
         btnUpdate.addActionListener(e -> changePassword());
@@ -102,7 +94,7 @@ public class ChangePasswordUI extends JDialog {
         card.add(btnPanel);
     }
 
-    // Helper to add fields with label + spacing
+    
     private void addField(JPanel container, String label, JPasswordField field) {
 
         JLabel lbl = new JLabel(label);
@@ -122,9 +114,6 @@ public class ChangePasswordUI extends JDialog {
         container.add(Box.createVerticalStrut(12));
     }
 
-    // -------------------------------------
-    // LOGIC
-    // -------------------------------------
     private void changePassword() {
 
         String oldPass = new String(oldPassField.getPassword());
