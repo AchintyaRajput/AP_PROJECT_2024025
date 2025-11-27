@@ -6,25 +6,20 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * NotificationService: Create / fetch / mark notifications as read.
- * Uses the ERP DB (notifications table).
- */
+
 public class NotificationService {
 
     public static class NotificationRow {
         public int id;
-        public Integer userId;   // nullable
-        public String role;      // nullable
+        public Integer userId;   
+        public String role;      
         public String message;
         public String link;
         public boolean isRead;
         public Timestamp createdAt;
     }
 
-    /**
-     * Create a notification. If userId != null it targets a single user; otherwise provide role to target a role.
-     */
+  
     public boolean createNotification(Integer userId, String role, String message, String link) {
         String sql = "INSERT INTO notifications (user_id, role, message, link) VALUES (?,?,?,?)";
         try (Connection conn = DatabaseConnection.getERPConnection();
@@ -41,10 +36,7 @@ public class NotificationService {
         }
     }
 
-    /**
-     * Get notifications for a given user. Returns role-wide and user-specific notifications.
-     * Unread notifications are returned first (ORDER by is_read, created_at desc).
-     */
+   
     public List<NotificationRow> getNotificationsForUser(int userId, String role) {
         List<NotificationRow> out = new ArrayList<>();
 
@@ -80,9 +72,7 @@ public class NotificationService {
         return out;
     }
 
-    /**
-     * Mark a notification as read.
-     */
+   
     public boolean markAsRead(int notificationId) {
         String sql = "UPDATE notifications SET is_read = 1 WHERE notification_id = ?";
         try (Connection conn = DatabaseConnection.getERPConnection();
@@ -95,9 +85,7 @@ public class NotificationService {
         }
     }
 
-    /**
-     * Mark all notifications for a user/role as read.
-     */
+   
     public boolean markAllAsRead(int userId, String role) {
         String sql = "UPDATE notifications SET is_read = 1 WHERE (user_id = ? OR role = ?)";
         try (Connection conn = DatabaseConnection.getERPConnection();
