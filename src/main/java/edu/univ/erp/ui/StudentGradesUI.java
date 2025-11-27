@@ -8,12 +8,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-/**
- * Updated StudentGradesUI:
- * - Displays Score / Max Marks
- * - Displays Weighted Score using (score/maxMarks)*weight
- * - Matches new grading system
- */
+
 public class StudentGradesUI extends JPanel {
 
     private final User currentStudent;
@@ -40,7 +35,7 @@ public class StudentGradesUI extends JPanel {
 
         add(title, BorderLayout.NORTH);
 
-        // ===== TABLE MODEL =====
+        
         model = new DefaultTableModel(new Object[]{
                 "Course ID",
                 "Course Title",
@@ -64,7 +59,7 @@ public class StudentGradesUI extends JPanel {
 
         add(scroll, BorderLayout.CENTER);
 
-        // ===== REFRESH BUTTON =====
+        
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottom.setBackground(Color.WHITE);
 
