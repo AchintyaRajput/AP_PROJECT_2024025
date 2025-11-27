@@ -8,7 +8,7 @@ import java.util.List;
 
 public class StudentService {
 
-    // ====== DATA MODELS ======
+    
     public static class SectionRow {
         public int sectionId;
         public String courseId;
@@ -37,7 +37,7 @@ public class StudentService {
         public String courseTitle;
         public String component;
         public double score;
-        public double maxMarks;   // NEW FIELD
+        public double maxMarks;   
         public double weight;
     }
 
@@ -52,9 +52,7 @@ public class StudentService {
 
     private final NotificationService notificationService = new NotificationService();
 
-    // ==========================================================
-    // GET REAL STUDENT NAME FROM ERP DB
-    // ==========================================================
+    
     public String getStudentName(int studentId) {
         String sql = "SELECT name FROM students WHERE student_id = ?";
 
@@ -74,9 +72,7 @@ public class StudentService {
     }
 
 
-    // ==========================================================
-    // 1️⃣ GET ALL AVAILABLE SECTIONS
-    // ==========================================================
+    
     public List<SectionRow> getAvailableSections() {
         List<SectionRow> list = new ArrayList<>();
 
@@ -118,9 +114,7 @@ public class StudentService {
     }
 
 
-    // ==========================================================
-    // 2️⃣ GET STUDENT ENROLLMENTS
-    // ==========================================================
+    
     public List<EnrollmentRow> getStudentEnrollments(int studentId) {
         List<EnrollmentRow> list = new ArrayList<>();
 
@@ -165,14 +159,11 @@ public class StudentService {
     }
 
 
-    // ==========================================================
-    // 3️⃣ REGISTER FOR A SECTION
-    // ==========================================================
+    
     public String registerForSection(int studentId, int sectionId) {
 
         try (Connection conn = DatabaseConnection.getERPConnection()) {
 
-            // Fetch section info
             String sql = """
                 SELECT s.course_id, s.available_capacity, s.instructor_id, c.title
                 FROM sections s
@@ -191,17 +182,17 @@ public class StudentService {
             int instructorId = rs.getInt("instructor_id");
             String courseTitle = rs.getString("title");
 
-            // Fetch student name
+            
             String studentName = "";
             PreparedStatement ps2 = conn.prepareStatement("SELECT name FROM students WHERE student_id = ?");
             ps2.setInt(1, studentId);
             ResultSet rsStu = ps2.executeQuery();
             if (rsStu.next()) studentName = rsStu.getString("name");
 
-            // No capacity
+            
             if (available <= 0) return "No seats available.";
 
-            // Prevent duplicate course enrollment
+            
             String sqlDup = """
                 SELECT COUNT(*)
                 FROM enrollments e
@@ -218,20 +209,20 @@ public class StudentService {
             if (rsDup.getInt(1) > 0)
                 return "You are already enrolled in another section of this course.";
 
-            // Insert enrollment
+            
             PreparedStatement insert = conn.prepareStatement(
                     "INSERT INTO enrollments (student_id, section_id, status) VALUES (?, ?, 'Active')");
             insert.setInt(1, studentId);
             insert.setInt(2, sectionId);
             insert.executeUpdate();
 
-            // Reduce capacity
+            
             PreparedStatement upd = conn.prepareStatement(
                     "UPDATE sections SET available_capacity = available_capacity - 1 WHERE section_id = ?");
             upd.setInt(1, sectionId);
             upd.executeUpdate();
 
-            // Notifications
+            
             notificationService.createNotification(
                     studentId, null,
                     "You enrolled in " + courseId + " - " + courseTitle + " (Section " + sectionId + ")",
@@ -255,14 +246,12 @@ public class StudentService {
     }
 
 
-    // ==========================================================
-    // 4️⃣ DROP COURSE
-    // ==========================================================
+    
     public boolean dropCourse(int studentId, int sectionId) {
 
         try (Connection conn = DatabaseConnection.getERPConnection()) {
 
-            // Get info for notification
+            
             String sql = """
                 SELECT s.course_id, c.title, s.instructor_id, st.name AS student_name
                 FROM sections s
@@ -286,7 +275,7 @@ public class StudentService {
                 studentName = rs.getString("student_name");
             }
 
-            // Delete enrollment
+           
             PreparedStatement del = conn.prepareStatement(
                     "DELETE FROM enrollments WHERE student_id = ? AND section_id = ?");
             del.setInt(1, studentId);
@@ -295,13 +284,12 @@ public class StudentService {
             boolean removed = del.executeUpdate() > 0;
             if (!removed) return false;
 
-            // Increase capacity
             PreparedStatement upd = conn.prepareStatement(
                     "UPDATE sections SET available_capacity = available_capacity + 1 WHERE section_id = ?");
             upd.setInt(1, sectionId);
             upd.executeUpdate();
 
-            // Notifications
+            
             notificationService.createNotification(
                     studentId, null,
                     "You dropped " + courseId + " - " + courseTitle + " (Section " + sectionId + ")",
@@ -325,9 +313,7 @@ public class StudentService {
     }
 
 
-    // ==========================================================
-    // 5️⃣ GET STUDENT GRADES (NOW RETURNS maxMarks)
-    // ==========================================================
+ 
     public List<GradeRow> getGrades(int studentId) {
         List<GradeRow> list = new ArrayList<>();
 
@@ -367,9 +353,7 @@ public class StudentService {
     }
 
 
-    // ==========================================================
-    // 6️⃣ GET TRANSCRIPT DATA
-    // ==========================================================
+    
     public List<TranscriptRow> getTranscriptRows(int studentId) {
 
         List<TranscriptRow> list = new ArrayList<>();
